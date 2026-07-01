@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Халявщик</title>
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -23,7 +22,7 @@
         .search-box { background: rgba(34, 34, 34, 0.85); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
         .search-box input { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 16px; text-align: center; outline: none; }
         .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
-        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; }
+        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; text-align: center; }
         .btn-google { background: #4285F4; }
         .btn-torrent { background: #248a3d; }
 
@@ -36,10 +35,8 @@
         .player-box { background: rgba(20, 20, 20, 0.95); border: 2px dashed #e50914; padding: 15px; border-radius: 12px; margin-top: 25px; }
         .player-box h3 { margin-top: 0; color: #e50914; }
         .player-box input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 12px; text-align: center; }
-        .player-box button { background: #e50914; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 15px; }
-        
-        #video-container { margin-top: 15px; display: none; background: #000; border-radius: 8px; border: 1px solid #333; overflow: hidden; }
-        video { width: 100%; display: block; max-height: 300px; }
+        .player-box button { background: #e50914; color: white; border: none; padding: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; }
+        .player-box button:active { background: #b80710; }
         #status { font-size: 13px; color: #00bcd4; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
@@ -75,7 +72,6 @@
             <input type="text" id="torrentUrl" placeholder="Вставь ссылку на видео или Magnet 🧲">
             <button onclick="playAction()">Включить плеер</button>
             <div id="status"></div>
-            <div id="video-container"></div>
         </div>
     </div>
 
@@ -96,44 +92,30 @@
             } else { btns.style.display = 'none'; }
         }
 
-        var client = new WebTorrent();
-
         function playAction() {
-            playSound();
+            playSound(); // Обязательный клик
             var link = document.getElementById('torrentUrl').value.trim();
             var status = document.getElementById('status');
-            var container = document.getElementById('video-container');
             
             if(!link) { alert('Пожалуйста, вставьте ссылку!'); return; }
             
-            container.innerHTML = '';
-            container.style.display = 'none';
+            status.innerHTML = '🚀 Запуск полноэкранного плеера...';
 
-            // Если это ОБЫЧНАЯ интернет-ссылка (начинается с http)
+            // Если это обычная интернет ссылка mp4
             if (link.startsWith('http')) {
-                status.innerHTML = '🎥 Прямое воспроизведение файла...';
-                container.style.display = 'block';
-                
-                var videoElement = document.createElement('video');
-                videoElement.src = link;
-                videoElement.controls = true;
-                videoElement.autoplay = true;
-                container.appendChild(videoElement);
+                setTimeout(function() {
+                    window.open(link, '_blank');
+                    status.innerHTML = '';
+                }, 200);
             } 
-            // Если это ТОРРЕНТ-магнит
+            // Если это торрент-магнит ссылка
             else if (link.startsWith('magnet')) {
-                status.innerHTML = '⚡ Подключение к торренту... Ищу сидеров...';
-                client.add(link, function (torrent) {
-                    status.innerHTML = 'Загрузка видеопотока...';
-                    var file = torrent.files.find(function (f) {
-                        return f.name.endsWith('.mp4') || f.name.endsWith('.mkv') || f.name.endsWith('.avi');
-                    });
-                    if(file) {
-                        container.style.display = 'block';
-                        status.innerHTML = '🎥 Торрент играет: ' + file.name;
-                        file.appendTo(container, { autoplay: true, controls: true });
-                    } else { status.innerHTML = '❌ Видео не найдено в раздаче.'; }
-                });
+                setTimeout(function() {
+                    // Используем всеядный онлайн-транслятор торрентов, который откроет видео на весь экран
+                    var fastPlayerUrl = 'https://fastst.stream/#/' + encodeURIComponent(link);
+                    window.open(fastPlayerUrl, '_blank');
+                    status.innerHTML = '';
+                }, 200);
             } else {
                 status.innerHTML = '❌ Неверный формат ссылки.';
             }
