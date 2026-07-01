@@ -7,33 +7,41 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #141414;
+            background: linear-gradient(rgba(20, 20, 20, 0.75), rgba(20, 20, 20, 0.75)), url('bg.jpg') no-repeat center center fixed;
+            background-size: cover;
             color: #ffffff;
             margin: 0;
             padding: 20px;
             text-align: center;
+            min-height: 100vh;
         }
-        h1 { color: #e50914; }
+        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        p { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; }
         .container {
             max-width: 600px;
             margin: 0 auto;
         }
         .section-title {
             text-align: left;
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
             padding-bottom: 5px;
             margin-top: 30px;
-            color: #aaa;
+            color: #ddd;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            font-weight: bold;
         }
         .link-card {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #222;
+            background: rgba(34, 34, 34, 0.85);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             padding: 15px;
             margin: 10px 0;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .link-card a {
             color: #fff;
@@ -50,6 +58,7 @@
             border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .tag.torrent { background: #248a3d; }
         .tag.cloud { background: #00bcd4; }
@@ -61,7 +70,6 @@
         <h1>Халявщик</h1>
         <p>Кликни на сайт, чтобы перейти к фильмам</p>
 
-        <!-- РАЗДЕЛ: СМОТРЕТЬ ОНЛАЙН -->
         <div class="section-title">Смотреть онлайн</div>
         
         <div class="link-card">
@@ -70,7 +78,6 @@
         </div>
 
 
-        <!-- РАЗДЕЛ: СКАЧАТЬ ТОРРЕНТОМ -->
         <div class="section-title">Скачать торрентом</div>
 
         <div class="link-card">
@@ -90,7 +97,7 @@
 
         <div class="link-card">
             <a href="https://kinozal.tv" target="_blank">Кинозал</a>
-            <span class="tag torrent">Торрент</span>
+            <span class="tag torrent">Торrent</span>
         </div>
 
         <div class="link-card">
@@ -104,7 +111,6 @@
         </div>
 
 
-        <!-- РАЗДЕЛ: ФАЙЛООБМЕННИКИ И ОБЛАКА -->
         <div class="section-title">Файлообменники и облака</div>
 
         <div class="link-card">
