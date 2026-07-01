@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Халявщик</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #141414;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #e50914; }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .section-title {
+            text-align: left;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            color: #aaa;
+        }
+        .link-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .link-card a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            flex-grow: 1;
+            text-align: left;
+        }
+        .link-card a:hover { color: #e50914; }
+        .tag {
+            background: #e50914;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .tag.torrent { background: #248a3d; }
+        .tag.cloud { background: #00bcd4; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Халявщик</h1>
+        <p>Кликни на сайт, чтобы перейти к фильмам</p>
+
+        <!-- РАЗДЕЛ: СМОТРЕТЬ ОНЛАЙН -->
+        <div class="section-title">Смотреть онлайн</div>
+        
+        <div class="link-card">
+            <a href="https://ru.huyamba.name" target="_blank">Huyamba (Кинотеатр)</a>
+            <span class="tag">Онлайн</span>
+        </div>
+
+
+        <!-- РАЗДЕЛ: СКАЧАТЬ ТОРРЕНТОМ -->
+        <div class="section-title">Скачать торрентом</div>
+
+        <div class="link-card">
+            <a href="https://rutracker.org" target="_blank">RuTracker</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://nnmclub.to" target="_blank">NNM-Club</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://rutor.info" target="_blank">Rutor</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://kinozal.tv" target="_blank">Кинозал</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://torrentpier.com" target="_blank">TorrentPier</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://torlook.info" target="_blank">TorLook (Поиск раздач)</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+
+
+        <!-- РАЗДЕЛ: ФАЙЛООБМЕННИКИ И ОБЛАКА -->
+        <div class="section-title">Файлообменники и облака</div>
+
+        <div class="link-card">
+            <a href="https://dropmefiles.com" target="_blank">DropMeFiles (до 50 ГБ)</a>
+            <span class="tag cloud">Облако</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://fex.net" target="_blank">FEX.net</a>
+            <span class="tag cloud">Облако</span>
+        </div>
+
+        <div class="link-card">
+            <a href="https://drive.google.com" target="_blank">Google Диск</a>
+            <span class="tag cloud">Облако</span>
+        </div>
+
+    </div>
+
+</body>
+</html>
