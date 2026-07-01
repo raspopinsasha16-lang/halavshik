@@ -2,245 +2,41 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Халявщик</title>
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background: linear-gradient(rgba(20, 20, 20, 0.78), rgba(20, 20, 20, 0.78)), url('bg.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px 10px;
-            text-align: center;
-            min-height: 100vh;
-        }
-        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 5px; font-size: 28px; }
-        .sub-title { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; margin-bottom: 20px; font-size: 14px; }
+        body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; }
-        
-        /* Поиск */
-        .search-box {
-            background: rgba(34, 34, 34, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .search-box input {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #111;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            text-align: center;
-        }
-        .search-box input:focus { border-color: #e50914; }
-        .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
-        .search-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #fff;
-            font-size: 13px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-google { background: #4285F4; }
-        .btn-torrent { background: #248a3d; }
-
-        /* Разделы-аккордеоны */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(45, 45, 45, 0.7);
-            padding: 12px 15px;
-            margin-top: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.05);
-            user-select: none;
-        }
-        .section-header::after { content: '▼'; font-size: 12px; color: #aaa; transition: transform 0.2s; }
-        .section-header.active::after { transform: rotate(-180deg); }
-        .section-content { display: block; overflow: hidden; }
-
-        /* Карточки ссылок */
-        .link-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(34, 34, 34, 0.85);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            padding: 12px 15px;
-            margin: 8px 0;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-        .link-left { display: flex; align-items: center; gap: 12px; flex-grow: 1; text-align: left; }
-        .favicon { width: 20px; height: 20px; border-radius: 4px; background: #444; object-fit: contain; }
-        .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; display: block; width: 100%; }
-        .tag { background: #e50914; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; }
-        .tag.torrent { background: #248a3d; }
-        .tag.cloud { background: #00bcd4; }
-
-        /* Блок Плеера */
-        .player-box {
-            background: rgba(20, 20, 20, 0.9);
-            border: 2px dashed #e50914;
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 25px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-        }
-        .player-box h3 { margin-top: 0; color: #e50914; }
-        .player-box input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #e50914;
-            background: #000;
-            color: #fff;
-            box-sizing: border-box;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-        .player-box button {
-            background: #e50914;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 15px;
-        }
-        #video-container { margin-top: 15px; display: none; background: #000; border-radius: 8px; overflow: hidden; }
-        video { width: 100%; display: block; }
-        #status { font-size: 13px; color: #00bcd4; margin-top: 8px; font-weight: bold; }
+        input, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; }
+        button { background: #e50914; color: white; font-weight: bold; cursor: pointer; }
+        button:active { background: #b80710; }
     </style>
 </head>
 <body>
 
+    <!-- Звуковой эффект -->
+    <audio id="clickSound" src="click.mp3"></audio>
+
     <div class="container">
         <h1>Халявщик</h1>
-        <div class="sub-title">Твой личный медиа-хаб</div>
-
-        <div class="search-box">
-            <input type="text" id="movieSearch" placeholder="Введите название фильма..." oninput="checkSearch()">
-            <div class="search-buttons" id="searchBtns">
-                <a href="#" id="goGoogle" target="_blank" class="search-btn btn-google">В Google</a>
-                <a href="#" id="goRutor" target="_blank" class="search-btn btn-torrent">На Rutor</a>
-            </div>
-        </div>
-
-        <div class="section-header active" onclick="toggleSection(this)">Смотреть онлайн</div>
-        <div class="section-content">
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=ru.huyamba.name" alt="">
-                    <a href="https://ru.huyamba.name" target="_blank">Huyamba</a>
-                </div>
-                <span class="tag">Онлайн</span>
-            </div>
-        </div>
-
-        <div class="section-header active" onclick="toggleSection(this)">Скачать торрентом</div>
-        <div class="section-content">
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=rutracker.org" alt="">
-                    <a href="https://rutracker.org" target="_blank">RuTracker</a>
-                </div>
-                <span class="tag torrent">Торрент</span>
-            </div>
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=nnmclub.to" alt="">
-                    <a href="https://nnmclub.to" target="_blank">NNM-Club</a>
-                </div>
-                <span class="tag torrent">Торрент</span>
-            </div>
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=rutor.info" alt="">
-                    <a href="https://rutor.info" target="_blank">Rutor</a>
-                </div>
-                <span class="tag torrent">Торрент</span>
-            </div>
-        </div>
-
-        <div class="player-box">
-            <h3>🎬 Кинотеатр Халявщика</h3>
-            <input type="text" id="torrentId" placeholder="Вставь Magnet-ссылку со значка 🧲">
-            <button onclick="playTorrent()">Запустить фильм прямо здесь</button>
-            <div id="status"></div>
-            <div id="video-container"></div>
-        </div>
-
+        
+        <input type="text" id="torrentUrl" placeholder="Вставь Magnet-ссылку 🧲">
+        <button onclick="playSoundAndPlay()">Смотреть онлайн (как в KMPlayer)</button>
     </div>
 
     <script>
-        function checkSearch() {
-            var query = document.getElementById('movieSearch').value.trim();
-            var btns = document.getElementById('searchBtns');
-            if(query.length > 0) {
-                btns.style.display = 'flex';
-                document.getElementById('goGoogle').href = 'https://www.google.com/search?q=' + encodeURIComponent(query + ' смотреть онлайн');
-                document.getElementById('goRutor').href = 'https://rutor.info/search/1/0/000/2/' + encodeURIComponent(query);
-            } else { btns.style.display = 'none'; }
-        }
+        function playSoundAndPlay() {
+            // Играем звук
+            var sound = document.getElementById('clickSound');
+            sound.play();
 
-        function toggleSection(header) {
-            header.classList.toggle('active');
-            var content = header.nextElementSibling;
-            content.style.display = (content.style.display === "none") ? "block" : "none";
-        }
-
-        var client = new WebTorrent();
-        function playTorrent() {
-            var torrentId = document.getElementById('torrentId').value.trim();
-            var status = document.getElementById('status');
-            var container = document.getElementById('video-container');
+            // Запускаем плеер через 0.2 сек
+            var link = document.getElementById('torrentUrl').value.trim();
+            if(!link) { alert('Вставь ссылку!'); return; }
             
-            if(!torrentId) { alert('Пожалуйста, вставь magnet-ссылку!'); return; }
-            
-            status.innerHTML = '⚡ Ищу раздающих (сидеров)... Подождите...';
-            container.innerHTML = '';
-            container.style.display = 'none';
-
-            client.add(torrentId, function (torrent) {
-                status.innerHTML = 'Найдено! Загружаю видео...';
-                var file = torrent.files.find(function (file) {
-                    return file.name.endsWith('.mp4') || file.name.endsWith('.mkv') || file.name.endsWith('.avi');
-                });
-
-                if(file) {
-                    container.style.display = 'block';
-                    status.innerHTML = '🎥 Играет: ' + file.name;
-                    file.appendTo(container, { autoplay: true, controls: true });
-                } else {
-                    status.innerHTML = '❌ Внутри торрента нет видеофайла.';
-                }
-            });
+            // Сервис для онлайн-просмотра торрентов
+            var playUrl = 'https://wormhole.app/api/webtorrent?url=' + encodeURIComponent(link);
+            window.open('https://webtorrent.io/desktop/', '_blank'); 
         }
     </script>
-
 </body>
 </html>
