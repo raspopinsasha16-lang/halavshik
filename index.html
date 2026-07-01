@@ -2,40 +2,88 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Халявщик</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: linear-gradient(rgba(20, 20, 20, 0.78), rgba(20, 20, 20, 0.78)), url('bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px 10px;
+            text-align: center;
+            min-height: 100vh;
+        }
+        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 5px; font-size: 28px; }
+        .sub-title { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; margin-bottom: 20px; font-size: 14px; }
         .container { max-width: 500px; margin: 0 auto; }
-        input, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; }
-        button { background: #e50914; color: white; font-weight: bold; cursor: pointer; }
-        button:active { background: #b80710; }
+        
+        .search-box { background: rgba(34, 34, 34, 0.85); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .search-box input { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 16px; text-align: center; }
+        .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
+        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; }
+        .btn-google { background: #4285F4; }
+        .btn-torrent { background: #248a3d; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; background: rgba(45, 45, 45, 0.7); padding: 12px 15px; margin-top: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .link-card { display: flex; justify-content: space-between; align-items: center; background: rgba(34, 34, 34, 0.85); padding: 12px 15px; margin: 8px 0; border-radius: 8px; }
+        .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; }
+        
+        .player-box { background: rgba(20, 20, 20, 0.9); border: 2px dashed #e50914; padding: 15px; border-radius: 12px; margin-top: 25px; }
+        .player-box input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e50914; background: #000; color: #fff; margin-bottom: 10px; text-align: center; }
+        .player-box button { background: #e50914; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
     </style>
 </head>
 <body>
 
-    <!-- Звуковой эффект -->
     <audio id="clickSound" src="click.mp3"></audio>
 
     <div class="container">
         <h1>Халявщик</h1>
-        
-        <input type="text" id="torrentUrl" placeholder="Вставь Magnet-ссылку 🧲">
-        <button onclick="playSoundAndPlay()">Смотреть онлайн (как в KMPlayer)</button>
+        <div class="sub-title">Твой личный медиа-хаб</div>
+
+        <div class="search-box">
+            <input type="text" id="movieSearch" placeholder="Введите название фильма..." oninput="checkSearch()">
+            <div class="search-buttons" id="searchBtns">
+                <a href="#" id="goGoogle" onclick="playSound()" target="_blank" class="search-btn btn-google">В Google</a>
+                <a href="#" id="goRutor" onclick="playSound()" target="_blank" class="search-btn btn-torrent">На Rutor</a>
+            </div>
+        </div>
+
+        <div class="section-header" onclick="playSound()">Смотреть онлайн</div>
+        <div class="link-card"><a href="https://ru.huyamba.name" target="_blank" onclick="playSound()">Huyamba</a></div>
+
+        <div class="section-header" onclick="playSound()">Скачать торрентом</div>
+        <div class="link-card"><a href="https://rutracker.org" target="_blank" onclick="playSound()">RuTracker</a></div>
+        <div class="link-card"><a href="https://nnmclub.to" target="_blank" onclick="playSound()">NNM-Club</a></div>
+        <div class="link-card"><a href="https://rutor.info" target="_blank" onclick="playSound()">Rutor</a></div>
+
+        <div class="player-box">
+            <h3>🎬 Кинотеатр Халявщика</h3>
+            <input type="text" id="torrentUrl" placeholder="Вставь Magnet-ссылку">
+            <button onclick="playAction()">Запустить фильм онлайн</button>
+        </div>
     </div>
 
     <script>
-        function playSoundAndPlay() {
-            // Играем звук
-            var sound = document.getElementById('clickSound');
-            sound.play();
+        function playSound() { document.getElementById('clickSound').play(); }
 
-            // Запускаем плеер через 0.2 сек
+        function checkSearch() {
+            var query = document.getElementById('movieSearch').value.trim();
+            var btns = document.getElementById('searchBtns');
+            if(query.length > 0) {
+                btns.style.display = 'flex';
+                document.getElementById('goGoogle').href = 'https://www.google.com/search?q=' + encodeURIComponent(query + ' смотреть онлайн');
+                document.getElementById('goRutor').href = 'https://rutor.info/search/1/0/000/2/' + encodeURIComponent(query);
+            } else { btns.style.display = 'none'; }
+        }
+
+        function playAction() {
+            playSound();
             var link = document.getElementById('torrentUrl').value.trim();
-            if(!link) { alert('Вставь ссылку!'); return; }
-            
-            // Сервис для онлайн-просмотра торрентов
-            var playUrl = 'https://wormhole.app/api/webtorrent?url=' + encodeURIComponent(link);
-            window.open('https://webtorrent.io/desktop/', '_blank'); 
+            if(!link) { alert('Вставь Magnet-ссылку!'); return; }
+            window.open('https://webtorrent.io/desktop/', '_blank');
         }
     </script>
 </body>
