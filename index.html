@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Халявщик</title>
+    <!-- Подключаем движок WebTorrent для стриминга видео -->
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -90,29 +92,47 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.03);
-            transition: background 0.2s;
         }
-        .link-card:active { background: rgba(50, 50, 50, 0.9); }
         .link-left { display: flex; align-items: center; gap: 12px; flex-grow: 1; text-align: left; }
         .favicon { width: 20px; height: 20px; border-radius: 4px; background: #444; object-fit: contain; }
-        .link-card a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-            display: block;
-            width: 100%;
-        }
-        .tag {
-            background: #e50914;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
+        .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; display: block; width: 100%; }
+        .tag { background: #e50914; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; }
         .tag.torrent { background: #248a3d; }
         .tag.cloud { background: #00bcd4; }
+
+        /* Блок Торрент-Плеера */
+        .player-box {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px dashed #e50914;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 25px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+        }
+        .player-box h3 { margin-top: 0; color: #e50914; }
+        .player-box input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e50914;
+            background: #000;
+            color: #fff;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .player-box button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #video-container { margin-top: 15px; display: none; background: #000; border-radius: 8px; overflow: hidden; }
+        video { width: 100%; display: block; }
+        #status { font-size: 13px; color: #00bcd4; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -166,74 +186,68 @@
                 </div>
                 <span class="tag torrent">Торрент</span>
             </div>
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=kinozal.tv" alt="">
-                    <a href="https://kinozal.tv" target="_blank">Кинозал</a>
-                </div>
-                <span class="tag torrent">Торрент</span>
-            </div>
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=torlook.info" alt="">
-                    <a href="https://torlook.info" target="_blank">TorLook (Поиск)</a>
-                </div>
-                <span class="tag torrent">Торрент</span>
-            </div>
         </div>
 
-        <!-- РАЗДЕЛ: ОБЛАКА -->
-        <div class="section-header active" onclick="toggleSection(this)">Файлообменники и облака</div>
-        <div class="section-content">
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=dropmefiles.com" alt="">
-                    <a href="https://dropmefiles.com" target="_blank">DropMeFiles</a>
-                </div>
-                <span class="tag cloud">Облако</span>
-            </div>
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=fex.net" alt="">
-                    <a href="https://fex.net" target="_blank">FEX.net</a>
-                </div>
-                <span class="tag cloud">Облако</span>
-            </div>
-            <div class="link-card">
-                <div class="link-left">
-                    <img class="favicon" src="https://www.google.com/s2/favicons?sz=64&domain=drive.google.com" alt="">
-                    <a href="https://drive.google.com" target="_blank">Google Диск</a>
-                </div>
-                <span class="tag cloud">Облако</span>
-            </div>
+        <!-- ВСТРОЕННЫЙ ТОРРЕНТ-ПЛЕЕР -->
+        <div class="player-box">
+            <h3>🎬 Кинотеатр Халявщика</h3>
+            <input type="text" id="torrentId" placeholder="Вставь Magnet-ссылку или ссылку на .torrent">
+            <button onclick="playTorrent()">Запустить фильм</button>
+            <div id="status"></div>
+            <div id="video-container"></div>
         </div>
 
     </div>
 
     <script>
-        // Функция для работы умного поиска
+        // Движок поиска
         function checkSearch() {
             var query = document.getElementById('movieSearch').value.trim();
             var btns = document.getElementById('searchBtns');
-            
             if(query.length > 0) {
                 btns.style.display = 'flex';
                 document.getElementById('goGoogle').href = 'https://www.google.com/search?q=' + encodeURIComponent(query + ' смотреть онлайн');
                 document.getElementById('goRutor').href = 'https://rutor.info/search/1/0/000/2/' + encodeURIComponent(query);
-            } else {
-                btns.style.display = 'none';
-            }
+            } else { btns.style.display = 'none'; }
         }
 
-        // Функция сворачивания разделов
+        // Сворачивание разделов
         function toggleSection(header) {
             header.classList.toggle('active');
             var content = header.nextElementSibling;
-            if (content.style.display === "none") {
-                content.style.display = "block";
-            } else {
-                content.style.display = "none";
-            }
+            content.style.display = (content.style.display === "none") ? "block" : "none";
+        }
+
+        // Логика плеера WebTorrent
+        var client = new WebTorrent();
+        function playTorrent() {
+            var torrentId = document.getElementById('torrentId').value.trim();
+            var status = document.getElementById('status');
+            var container = document.getElementById('video-container');
+            
+            if(!torrentId) { alert('Пожалуйста, вставь ссылку!'); return; }
+            
+            status.innerHTML = '⚡ Подключение к раздаче и поиск сидеров...';
+            container.innerHTML = '';
+            container.style.display = 'none';
+
+            client.add(torrentId, function (torrent) {
+                status.innerHTML = 'Загрузка метаданных...';
+                
+                // Находим первый видеофайл в торренте
+                var file = torrent.files.find(function (file) {
+                    return file.name.endsWith('.mp4') || file.name.endsWith('.mkv') || file.name.endsWith('.avi');
+                });
+
+                if(file) {
+                    container.style.display = 'block';
+                    status.innerHTML = '🎥 Воспроизведение: ' + file.name;
+                    // Запускаем стриминг в плеер
+                    file.appendTo(container, { autoplay: true, controls: true });
+                } else {
+                    status.innerHTML = '❌ Видеофайлы внутри торрента не найдены.';
+                }
+            });
         }
     </script>
 
