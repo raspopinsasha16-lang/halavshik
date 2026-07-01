@@ -20,121 +20,25 @@
         .sub-title { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; margin-bottom: 20px; font-size: 14px; }
         .container { max-width: 500px; margin: 0 auto; }
         
-        /* Поиск */
-        .search-box {
-            background: rgba(34, 34, 34, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .search-box input {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #111;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            text-align: center;
-        }
-        .search-box input:focus { border-color: #e50914; }
+        .search-box { background: rgba(34, 34, 34, 0.85); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .search-box input { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 16px; text-align: center; outline: none; }
         .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
-        .search-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #fff;
-            font-size: 13px;
-            text-decoration: none;
-            display: inline-block;
-        }
+        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; }
         .btn-google { background: #4285F4; }
         .btn-torrent { background: #248a3d; }
 
-        /* Разделы и Ссылки */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(45, 45, 45, 0.7);
-            padding: 12px 15px;
-            margin-top: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.05);
-            user-select: none;
-        }
-        .link-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(34, 34, 34, 0.85);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            padding: 12px 15px;
-            margin: 8px 0;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.03);
-        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; background: rgba(45, 45, 45, 0.7); padding: 12px 15px; margin-top: 15px; border-radius: 8px; font-weight: bold; }
+        .link-card { display: flex; justify-content: space-between; align-items: center; background: rgba(34, 34, 34, 0.85); padding: 12px 15px; margin: 8px 0; border-radius: 8px; }
         .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; display: block; width: 100%; text-align: left; }
-        .tag { background: #e50914; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; }
+        .tag { background: #e50914; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
         .tag.torrent { background: #248a3d; }
 
-        /* Блок Встроенного Плеера */
-        .player-box {
-            background: rgba(20, 20, 20, 0.95);
-            border: 2px dashed #e50914;
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 25px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-        }
+        .player-box { background: rgba(20, 20, 20, 0.95); border: 2px dashed #e50914; padding: 15px; border-radius: 12px; margin-top: 25px; }
         .player-box h3 { margin-top: 0; color: #e50914; }
-        .player-box input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #e50914;
-            background: #000;
-            color: #fff;
-            box-sizing: border-box;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-        .player-box button {
-            background: #e50914;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 15px;
-        }
-        .player-box button:active { background: #b80710; }
+        .player-box input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 12px; text-align: center; }
+        .player-box button { background: #e50914; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 15px; }
         
-        /* Окно под KMPlayer */
-        #video-container {
-            margin-top: 15px;
-            display: none;
-            background: #000;
-            border-radius: 8px;
-            border: 1px solid #333;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(0,0,0,0.9);
-        }
+        #video-container { margin-top: 15px; display: none; background: #000; border-radius: 8px; border: 1px solid #333; overflow: hidden; }
         video { width: 100%; display: block; max-height: 300px; }
         #status { font-size: 13px; color: #00bcd4; margin-top: 8px; font-weight: bold; }
     </style>
@@ -162,38 +66,26 @@
         </div>
 
         <div class="section-header">Скачать торрентом</div>
-        <div class="link-card">
-            <a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a>
-            <span class="tag torrent">Торрент</span>
-        </div>
-        <div class="link-card">
-            <a href="https://nnmclub.to" onclick="playSound()" target="_blank">NNM-Club</a>
-            <span class="tag torrent">Торрент</span>
-        </div>
-        <div class="link-card">
-            <a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a>
-            <span class="tag torrent">Торrenт</span>
-        </div>
+        <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a><span class="tag torrent">Торрент</span></div>
+        <div class="link-card"><a href="https://nnmclub.to" onclick="playSound()" target="_blank">NNM-Club</a><span class="tag torrent">Торрент</span></div>
+        <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a><span class="tag torrent">Торрент</span></div>
 
         <div class="player-box">
             <h3>🎬 Кинотеатр Халявщика</h3>
-            <input type="text" id="torrentUrl" placeholder="Вставь Magnet-ссылку 🧲">
+            <input type="text" id="torrentUrl" placeholder="Вставь ссылку на видео или Magnet 🧲">
             <button onclick="playAction()">Включить плеер</button>
             <div id="status"></div>
             <div id="video-container"></div>
         </div>
-
     </div>
 
     <script>
-        // Функция включения звука клика
         function playSound() {
             var audio = document.getElementById('clickSound');
             audio.currentTime = 0;
-            audio.play().catch(function(e) { console.log("Звук заблокирован браузером"); });
+            audio.play().catch(function(e) { console.log("Звук заблокирован"); });
         }
 
-        // Поиск фильмов
         function checkSearch() {
             var query = document.getElementById('movieSearch').value.trim();
             var btns = document.getElementById('searchBtns');
@@ -204,41 +96,48 @@
             } else { btns.style.display = 'none'; }
         }
 
-        // Логика запуска видео прямо на странице
         var client = new WebTorrent();
+
         function playAction() {
-            playSound(); // Издаем звук при нажатии
-            
+            playSound();
             var link = document.getElementById('torrentUrl').value.trim();
             var status = document.getElementById('status');
             var container = document.getElementById('video-container');
             
-            if(!link) { alert('Пожалуйста, вставьте magnet-ссылку!'); return; }
+            if(!link) { alert('Пожалуйста, вставьте ссылку!'); return; }
             
-            status.innerHTML = '⚡ Подключение к раздаче... Ищу сидеров...';
             container.innerHTML = '';
             container.style.display = 'none';
 
-            // Загружаем торрент прямо в элемент страницы
-            client.add(link, function (torrent) {
-                status.innerHTML = 'Метаданные получены. Начинаю стриминг видео...';
+            // Если это ОБЫЧНАЯ интернет-ссылка (начинается с http)
+            if (link.startsWith('http')) {
+                status.innerHTML = '🎥 Прямое воспроизведение файла...';
+                container.style.display = 'block';
                 
-                // Ищем первый попавшийся видеофайл (.mp4, .mkv)
-                var file = torrent.files.find(function (file) {
-                    return file.name.endsWith('.mp4') || file.name.endsWith('.mkv') || file.name.endsWith('.avi');
+                var videoElement = document.createElement('video');
+                videoElement.src = link;
+                videoElement.controls = true;
+                videoElement.autoplay = true;
+                container.appendChild(videoElement);
+            } 
+            // Если это ТОРРЕНТ-магнит
+            else if (link.startsWith('magnet')) {
+                status.innerHTML = '⚡ Подключение к торренту... Ищу сидеров...';
+                client.add(link, function (torrent) {
+                    status.innerHTML = 'Загрузка видеопотока...';
+                    var file = torrent.files.find(function (f) {
+                        return f.name.endsWith('.mp4') || f.name.endsWith('.mkv') || f.name.endsWith('.avi');
+                    });
+                    if(file) {
+                        container.style.display = 'block';
+                        status.innerHTML = '🎥 Торрент играет: ' + file.name;
+                        file.appendTo(container, { autoplay: true, controls: true });
+                    } else { status.innerHTML = '❌ Видео не найдено в раздаче.'; }
                 });
-
-                if(file) {
-                    container.style.display = 'block';
-                    status.innerHTML = '🎥 Играет: ' + file.name;
-                    // Создает встроенный видеоплеер со всеми кнопками управления на экране
-                    file.appendTo(container, { autoplay: true, controls: true });
-                } else {
-                    status.innerHTML = '❌ Видеофайлы внутри этой ссылки не найдены.';
-                }
-            });
+            } else {
+                status.innerHTML = '❌ Неверный формат ссылки.';
+            }
         }
     </script>
-
 </body>
 </html>
