@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Халявщик</title>
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -19,24 +20,114 @@
         .sub-title { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; margin-bottom: 20px; font-size: 14px; }
         .container { max-width: 500px; margin: 0 auto; }
         
-        .search-box { background: rgba(34, 34, 34, 0.85); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .search-box input { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 16px; text-align: center; outline: none; }
+        /* Поиск */
+        .search-box {
+            background: rgba(34, 34, 34, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #111;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            text-align: center;
+        }
+        .search-box input:focus { border-color: #e50914; }
         .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
-        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; text-align: center; }
+        .search-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-block;
+        }
         .btn-google { background: #4285F4; }
         .btn-torrent { background: #248a3d; }
 
-        .section-header { display: flex; justify-content: space-between; align-items: center; background: rgba(45, 45, 45, 0.7); padding: 12px 15px; margin-top: 15px; border-radius: 8px; font-weight: bold; }
-        .link-card { display: flex; justify-content: space-between; align-items: center; background: rgba(34, 34, 34, 0.85); padding: 12px 15px; margin: 8px 0; border-radius: 8px; }
+        /* Разделы и красивые карточки */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(45, 45, 45, 0.7);
+            padding: 12px 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .link-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(34, 34, 34, 0.85);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
         .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; display: block; width: 100%; text-align: left; }
-        .tag { background: #e50914; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .tag.torrent { background: #248a3d; }
+        
+        /* Красивые цветные значки (Теги) */
+        .tag { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; }
+        .tag.online { background: #e50914; color: #fff; }
+        .tag.torrent { background: #248a3d; color: #fff; }
 
-        .player-box { background: rgba(20, 20, 20, 0.95); border: 2px dashed #e50914; padding: 15px; border-radius: 12px; margin-top: 25px; }
+        /* Блок Кинотеатра */
+        .player-box {
+            background: rgba(20, 20, 20, 0.95);
+            border: 2px dashed #e50914;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 25px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+        }
         .player-box h3 { margin-top: 0; color: #e50914; }
-        .player-box input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 12px; text-align: center; }
-        .player-box button { background: #e50914; color: white; border: none; padding: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; }
+        .player-box input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e50914;
+            background: #000;
+            color: #fff;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .player-box button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
         .player-box button:active { background: #b80710; }
+        
+        #video-container { margin-top: 15px; display: none; background: #000; border-radius: 8px; border: 1px solid #333; overflow: hidden; }
+        video { width: 100%; display: block; max-height: 300px; }
         #status { font-size: 13px; color: #00bcd4; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
@@ -59,29 +150,42 @@
         <div class="section-header">Смотреть онлайн</div>
         <div class="link-card">
             <a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a>
-            <span class="tag">Онлайн</span>
+            <span class="tag online">Онлайн</span>
         </div>
 
         <div class="section-header">Скачать торрентом</div>
-        <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a><span class="tag torrent">Торрент</span></div>
-        <div class="link-card"><a href="https://nnmclub.to" onclick="playSound()" target="_blank">NNM-Club</a><span class="tag torrent">Торрент</span></div>
-        <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a><span class="tag torrent">Торрент</span></div>
+        <div class="link-card">
+            <a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+        <div class="link-card">
+            <a href="https://nnmclub.to" onclick="playSound()" target="_blank">NNM-Club</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
+        <div class="link-card">
+            <a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a>
+            <span class="tag torrent">Торрент</span>
+        </div>
 
         <div class="player-box">
             <h3>🎬 Кинотеатр Халявщика</h3>
-            <input type="text" id="torrentUrl" placeholder="Вставь ссылку на видео или Magnet 🧲">
+            <input type="text" id="torrentUrl" placeholder="Вставь ссылку (HDrezka, Magnet или MP4)">
             <button onclick="playAction()">Включить плеер</button>
             <div id="status"></div>
+            <div id="video-container"></div>
         </div>
+
     </div>
 
     <script>
+        // Воспроизведение твоего звука click.mp3
         function playSound() {
             var audio = document.getElementById('clickSound');
             audio.currentTime = 0;
-            audio.play().catch(function(e) { console.log("Звук заблокирован"); });
+            audio.play().catch(function(e) { console.log("Звук ожидает клика"); });
         }
 
+        // Поисковые кнопки
         function checkSearch() {
             var query = document.getElementById('movieSearch').value.trim();
             var btns = document.getElementById('searchBtns');
@@ -92,34 +196,58 @@
             } else { btns.style.display = 'none'; }
         }
 
+        var client = new WebTorrent();
+
+        // Главная логика кнопки плеера
         function playAction() {
-            playSound(); // Обязательный клик
+            playSound();
             var link = document.getElementById('torrentUrl').value.trim();
             var status = document.getElementById('status');
+            var container = document.getElementById('video-container');
             
             if(!link) { alert('Пожалуйста, вставьте ссылку!'); return; }
             
-            status.innerHTML = '🚀 Запуск полноэкранного плеера...';
+            container.innerHTML = '';
+            container.style.display = 'none';
 
-            // Если это обычная интернет ссылка mp4
-            if (link.startsWith('http')) {
+            // 1. Если это HDrezka или любой другой закрытый сайт — открываем напрямую без лагов
+            if (link.includes('hdrezka') || (link.startsWith('http') && !link.endsWith('.mp4') && !link.endsWith('.mkv') && !link.endsWith('.avi'))) {
+                status.innerHTML = '🍿 Перенаправляем на кинотеатр...';
                 setTimeout(function() {
                     window.open(link, '_blank');
                     status.innerHTML = '';
-                }, 200);
+                }, 250);
             } 
-            // Если это торрент-магнит ссылка
+            // 2. Если это прямая проверочная ссылка (например, наш ролик mp4)
+            else if (link.startsWith('http') && (link.endsWith('.mp4') || link.endsWith('.mkv') || link.endsWith('.avi'))) {
+                status.innerHTML = '🎥 Воспроизведение видеофайла...';
+                container.style.display = 'block';
+                var videoElement = document.createElement('video');
+                videoElement.src = link;
+                videoElement.controls = true;
+                videoElement.autoplay = true;
+                container.appendChild(videoElement);
+            } 
+            // 3. Если это торрент-магнит
             else if (link.startsWith('magnet')) {
-                setTimeout(function() {
-                    // Используем всеядный онлайн-транслятор торрентов, который откроет видео на весь экран
-                    var fastPlayerUrl = 'https://fastst.stream/#/' + encodeURIComponent(link);
-                    window.open(fastPlayerUrl, '_blank');
-                    status.innerHTML = '';
-                }, 200);
+                status.innerHTML = '⚡ Ищем сидеров для торрента...';
+                client.add(link, function (torrent) {
+                    status.innerHTML = 'Поток найден! Загрузка...';
+                    var file = torrent.files.find(function (f) {
+                        return f.name.endsWith('.mp4') || f.name.endsWith('.mkv') || f.name.endsWith('.avi');
+                    });
+                    if(file) {
+                        container.style.display = 'block';
+                        status.innerHTML = '🎥 Воспроизведение торрента: ' + file.name;
+                        file.appendTo(container, { autoplay: true, controls: true });
+                    } else { status.innerHTML = '❌ Видео в торренте не найдено.'; }
+                });
             } else {
-                status.innerHTML = '❌ Неверный формат ссылки.';
+                status.innerHTML = '❌ Неизвестный тип ссылки. Попробуем открыть так...';
+                window.open(link, '_blank');
             }
         }
     </script>
+
 </body>
 </html>
