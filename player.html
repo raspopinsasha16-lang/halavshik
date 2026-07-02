@@ -77,6 +77,7 @@
         var hlsInstance = null;
         var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
 
+        // Этот прокси мы оставляем ТОЛЬКО для текстового меню каналов
         var menuProxy = 'https://proxy.cors.sh/';
 
         function loadIPTVPlaylist(playlistUrl) {
@@ -127,7 +128,7 @@
                     }
                 })
                 .catch(err => {
-                    status.innerHTML = '⚠️ Ошибка прокси. Запускаем напрямую...';
+                    status.innerHTML = '⚠️ Ошибка прокси при чтении меню. Запускаем напрямую...';
                     startStream(playlistUrl, "Телевидение");
                 });
         }
@@ -143,24 +144,45 @@
 
             if (hlsInstance) { hlsInstance.destroy(); }
 
-            var fastVideoUrl = 'https://corsproxy.io/?' + encodeURIComponent(streamUrl);
-
+            // ВНИМАНИЕ: Запускаем поток напрямую, БЕЗ внешних ломающихся прокси!
             if (Hls.isSupported()) {
-                hlsInstance = new Hls();
-                hlsInstance.loadSource(fastVideoUrl);
+                hlsInstance = new Hls({
+                    // Внутренний шлюз обхода CORS заголовков самого браузера
+                    xhrSetup: function (xhr, url) {
+                        xhr.withCredentials = false;
+                    },
+                    maxBufferLength: 10,
+                    maxMaxBufferLength: 20
+                });
+                
+                hlsInstance.loadSource(streamUrl);
                 hlsInstance.attachMedia(videoElement);
+                
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
                     player = new Plyr(videoElement, plyrConfig);
                     videoElement.play().catch(function(){});
                     status.innerHTML = '📺 Эфир: ' + channelName;
                 });
+                
                 hlsInstance.on(Hls.Events.ERROR, function(event, data) {
                     if (data.fatal) {
-                        hlsInstance.loadSource(streamUrl);
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                status.innerHTML = '⚠️ Сетевая ошибка. Попытка восстановить поток...';
+                                hlsInstance.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                status.innerHTML = '⚠️ Ошибка медиа. Перезапуск декодера...';
+                                hlsInstance.recoverMediaError();
+                                break;
+                            default:
+                                status.innerHTML = '❌ Браузер заблокировал этот HTTP поток. Требуется локальный запуск.';
+                                break;
+                        }
                     }
                 });
             } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                videoElement.src = fastVideoUrl;
+                videoElement.src = streamUrl;
                 player = new Plyr(videoElement, plyrConfig);
                 videoElement.play().catch(function(){});
                 status.innerHTML = '📺 Эфир: ' + channelName;
