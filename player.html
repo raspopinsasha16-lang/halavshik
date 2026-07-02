@@ -21,26 +21,18 @@
         }
         h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
         .container { max-width: 600px; margin: 0 auto; }
-        
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .player-box input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; text-align: center; font-size: 15px; }
-        
         .player-buttons { display: flex; gap: 10px; margin-bottom: 5px; }
         .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 15px; }
         .tv-quick-btn { background: #248a3d; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 15px; white-space: nowrap; }
-        
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
         #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; }
-
         .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
         .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
-
-        /* Кнопка назад */
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; }
         .back-btn:hover { color: #fff; }
-
-        /* Плеер Plyr */
         .plyr__controls [data-plyr="play"] { background: #e50914 !important; color: #fff !important; }
     </style>
 </head>
@@ -54,7 +46,7 @@
         <div class="player-box">
             <input type="text" id="torrentUrl" placeholder="Вставь ссылку, Magnet 🧲 или .m3u8">
             <div class="player-buttons">
-                <button class="main-play-btn" onclick="playAction(null)">Включить плеер</button>
+                <button class="main-play-btn" onclick="playAction()">Включить плеер</button>
                 <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
             </div>
             <div id="status">Вставьте медиаресурс или запустите телевидение</div>
@@ -68,16 +60,16 @@
     <script>
         function playSound() { 
             var audio = document.getElementById('clickSound');
-            audio.currentTime = 0;
-            audio.play().catch(function(e){}); 
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(function(){}); 
+            }
         }
 
         var client = new WebTorrent();
-        var player;
+        var player = null;
         var hlsInstance = null;
         var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
-
-        // Этот прокси мы оставляем ТОЛЬКО для текстового меню каналов
         var menuProxy = 'https://proxy.cors.sh/';
 
         function loadIPTVPlaylist(playlistUrl) {
@@ -88,49 +80,51 @@
             status.innerHTML = '⌛ Загрузка списка каналов...';
 
             fetch(menuProxy + playlistUrl)
-                .then(response => {
+                .then(function(response) {
                     if (!response.ok) throw new Error('Ошибка сети');
                     return response.text();
                 })
-                .then(data => {
+                .then(function(data) {
                     status.innerHTML = '📺 Список обновлен. Выберите канал:';
                     var lines = data.split('\n');
                     var currentName = "";
                     var count = 0;
 
-                    lines.forEach(line => {
-                        line = line.trim();
-                        if (line.startsWith('#EXTINF:')) {
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i].trim();
+                        if (line.indexOf('#EXTINF:') === 0) {
                             var parts = line.split(',');
                             currentName = parts[parts.length - 1] || "Канал " + (++count);
                         } 
-                        else if (line.length > 0 && !line.startsWith('#')) {
+                        else if (line.length > 0 && line.indexOf('#') !== 0) {
                             var streamUrl = line;
-                            if (!streamUrl.startsWith('http')) {
+                            if (streamUrl.indexOf('http') !== 0) {
                                 streamUrl = 'http://sachamaster.pp.ua/2020/' + streamUrl;
                             }
                             
                             if (currentName) {
-                                var btn = document.createElement('button');
-                                btn.className = 'channel-btn';
-                                btn.innerText = currentName;
-                                (function(url, name) {
-                                    btn.onclick = function() { startStream(url, name); };
-                                })(streamUrl, currentName);
-                                grid.appendChild(btn);
+                                createChannelButton(streamUrl, currentName, grid);
                             }
                         }
-                    });
+                    }
 
                     if (grid.children.length === 0) {
                         status.innerHTML = '📺 Запуск прямого эфира...';
                         startStream(playlistUrl, "Прямой поток");
                     }
                 })
-                .catch(err => {
+                .catch(function(err) {
                     status.innerHTML = '⚠️ Ошибка прокси при чтении меню. Запускаем напрямую...';
                     startStream(playlistUrl, "Телевидение");
                 });
+        }
+
+        function createChannelButton(url, name, gridElement) {
+            var btn = document.createElement('button');
+            btn.className = 'channel-btn';
+            btn.innerText = name;
+            btn.onclick = function() { startStream(url, name); };
+            gridElement.appendChild(btn);
         }
 
         function startStream(streamUrl, channelName) {
@@ -144,10 +138,8 @@
 
             if (hlsInstance) { hlsInstance.destroy(); }
 
-            // ВНИМАНИЕ: Запускаем поток напрямую, БЕЗ внешних ломающихся прокси!
             if (Hls.isSupported()) {
                 hlsInstance = new Hls({
-                    // Внутренний шлюз обхода CORS заголовков самого браузера
                     xhrSetup: function (xhr, url) {
                         xhr.withCredentials = false;
                     },
@@ -166,18 +158,14 @@
                 
                 hlsInstance.on(Hls.Events.ERROR, function(event, data) {
                     if (data.fatal) {
-                        switch (data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                status.innerHTML = '⚠️ Сетевая ошибка. Попытка восстановить поток...';
-                                hlsInstance.startLoad();
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                status.innerHTML = '⚠️ Ошибка медиа. Перезапуск декодера...';
-                                hlsInstance.recoverMediaError();
-                                break;
-                            default:
-                                status.innerHTML = '❌ Браузер заблокировал этот HTTP поток. Требуется локальный запуск.';
-                                break;
+                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                            status.innerHTML = '⚠️ Сетевая ошибка. Восстановление...';
+                            hlsInstance.startLoad();
+                        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            status.innerHTML = '⚠️ Ошибка медиа. Перезапуск...';
+                            hlsInstance.recoverMediaError();
+                        } else {
+                            status.innerHTML = '❌ Поток заблокирован браузером. Требуется локальный запуск.';
                         }
                     }
                 });
@@ -189,25 +177,29 @@
             }
         }
 
-        function playAction(forcedLink) {
+        function playAction() {
             playSound();
-            var link = forcedLink ? forcedLink : document.getElementById('torrentUrl').value.trim();
+            var link = document.getElementById('torrentUrl').value.trim();
             if(!link) { alert('Вставь ссылку!'); return; }
             
-            if (link.includes('.m3u8') || link.includes('m3u8')) {
+            if (link.indexOf('.m3u8') !== -1 || link.indexOf('m3u8') !== -1) {
                 loadIPTVPlaylist(link);
             } else {
                 document.getElementById('channelsGrid').innerHTML = '';
-                if (link.startsWith('magnet')) {
+                if (link.indexOf('magnet') === 0) {
                     var status = document.getElementById('status');
                     status.innerHTML = '⚡ Ищем раздачу в торрентах...';
                     document.getElementById('video-container').innerHTML = '<video id="player" playsinline controls></video>';
                     var videoElement = document.getElementById('player');
                     client.add(link, function (torrent) {
-                        var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                        file.renderTo('#player', { autoplay: true });
-                        player = new Plyr(videoElement, plyrConfig);
-                        status.innerHTML = 'Играет торрент: ' + file.name;
+                        var file = torrent.files.find(function(f) {
+                            return f.name.endsWith('.mp4') || f.name.endsWith('.mkv');
+                        });
+                        if (file) {
+                            file.renderTo('#player', { autoplay: true });
+                            player = new Plyr(videoElement, plyrConfig);
+                            status.innerHTML = 'Играет торрент: ' + file.name;
+                        }
                     });
                 } else {
                     startStream(link, "Видеофайл");
@@ -216,5 +208,4 @@
         }
     </script>
 </body>
-</html>.
-
+</html>
