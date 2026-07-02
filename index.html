@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Халявщик | Pro Player</title>
+    <title>Халявщик | Pro Player & IPTV</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -43,9 +44,7 @@
         #video-container { margin-top: 15px; border-radius: 8px; overflow: hidden; background: #000; }
         #status { font-size: 13px; color: #00bcd4; margin: 10px 0; font-weight: bold; }
 
-        /* ТВОЯ КАСТОМИЗАЦИЯ КНОПОК ПЛЕЕРА PLYR */
-        
-        /* 1. Маленькая квадратная кнопка запуска (Play) на красном фоне */
+        /* КАСТОМИЗАЦИЯ КНОПОК ПЛЕЕРА PLYR */
         .plyr__controls [data-plyr="play"] {
             background: #e50914 !important;
             color: #fff !important;
@@ -59,7 +58,6 @@
         }
         .plyr__controls [data-plyr="play"]:hover { background: #b80710 !important; }
 
-        /* 2. Кнопка расширения экрана (Fullscreen) в прозрачном квадратике с рамкой */
         .plyr__controls [data-plyr="fullscreen"] {
             background: transparent !important;
             border: 1px solid rgba(255, 255, 255, 0.4) !important;
@@ -74,16 +72,15 @@
         }
         .plyr__controls [data-plyr="fullscreen"]:hover { background: rgba(255, 255, 255, 0.1) !important; border-color: #fff !important; }
 
-        /* 3. Выделенная кнопка выноса экрана (Picture-in-Picture) в отдельное окошко */
         .plyr__controls [data-plyr="pip"] {
-            background: rgba(0, 188, 212, 0.2) !important; /* Легкий неоновый оттенок */
+            background: rgba(0, 188, 212, 0.2) !important;
             border: 1px solid #00bcd4 !important;
             color: #00bcd4 !important;
             border-radius: 4px !important;
             width: 34px !important;
             height: 34px !important;
             padding: 0 !important;
-            margin-right: 5px !important; /* Немного отодвинем */
+            margin-right: 5px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -116,8 +113,8 @@
         <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a><span class="tag torrent">Торрент</span></div>
 
         <div class="player-box">
-            <h3>🎬 Кинотеатр Халявщика</h3>
-            <input type="text" id="torrentUrl" placeholder="Вставь ссылку или Magnet 🧲">
+            <h3>🎬 Кинотеатр & IPTV</h3>
+            <input type="text" id="torrentUrl" placeholder="Вставь ссылку, IPTV (.m3u8) или Magnet 🧲">
             <button class="main-play-btn" onclick="playAction()">Включить плеер</button>
             <div id="status"></div>
             <div id="video-container"></div>
@@ -151,25 +148,51 @@
             var status = document.getElementById('status');
             
             if(!link) { alert('Вставь ссылку!'); return; }
-            status.innerHTML = 'Запуск...';
+            status.innerHTML = 'Подключение...';
             container.innerHTML = '<video id="player" playsinline controls></video>';
+            var videoElement = document.getElementById('player');
             
-            if (link.startsWith('magnet')) {
+            // Инициализация кастомного пульта управления Plyr
+            var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
+
+            // 1. ПРОВЕРКА НА IPTV ПОТОК (.m3u8)
+            if (link.includes('.m3u8') || link.includes('m3u8')) {
+                status.innerHTML = '📺 Настройка ТВ-трансляции...';
+                if (Hls.isSupported()) {
+                    var hls = new Hls();
+                    hls.loadSource(link);
+                    hls.attachMedia(videoElement);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        player = new Plyr(videoElement, plyrConfig);
+                        videoElement.play();
+                        status.innerHTML = '📺 Прямой эфир запущен';
+                    });
+                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Для Safari на iOS (у него встроенная поддержка)
+                    videoElement.src = link;
+                    player = new Plyr(videoElement, plyrConfig);
+                    videoElement.play();
+                    status.innerHTML = '📺 Прямой эфир запущен';
+                } else {
+                    status.innerHTML = '❌ Браузер не поддерживает IPTV потоки.';
+                }
+            } 
+            // 2. ПРОВЕРКА НА ТОРРЕНТ-МАГНИТ
+            else if (link.startsWith('magnet')) {
+                status.innerHTML = '⚡ Ищем раздачу в торрентах...';
                 client.add(link, function (torrent) {
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
                     file.renderTo('#player', { autoplay: true });
-                    player = new Plyr('#player', {
-                        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen']
-                    });
-                    status.innerHTML = 'Играет: ' + file.name;
+                    player = new Plyr(videoElement, plyrConfig);
+                    status.innerHTML = 'Играет торрент: ' + file.name;
                 });
-            } else {
-                document.getElementById('player').src = link;
-                player = new Plyr('#player', {
-                    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen']
-                });
-                player.play();
-                status.innerHTML = 'Воспроизведение...';
+            } 
+            // 3. ОБЫЧНЫЙ СТАНДАРТНЫЙ ВИДЕОФАЙЛ (например, наш ролик с океаном)
+            else {
+                videoElement.src = link;
+                player = new Plyr(videoElement, plyrConfig);
+                videoElement.play();
+                status.innerHTML = '🎥 Воспроизведение видеофайла...';
             }
         }
     </script>
