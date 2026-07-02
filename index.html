@@ -55,15 +55,9 @@
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
 
         /* КАСТОМИЗАЦИЯ КНОПОК ПЛЕЕРА PLYR */
-        .plyr__controls [data-plyr="play"] {
-            background: #e50914 !important; color: #fff !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;
-        }
-        .plyr__controls [data-plyr="fullscreen"] {
-            background: transparent !important; border: 1px solid rgba(255, 255, 255, 0.4) !important; color: #fff !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;
-        }
-        .plyr__controls [data-plyr="pip"] {
-            background: rgba(0, 188, 212, 0.2) !important; border: 1px solid #00bcd4 !important; color: #00bcd4 !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; margin-right: 5px !important; display: flex !important; align-items: center !important; justify-content: center !important;
-        }
+        .plyr__controls [data-plyr="play"] { background: #e50914 !important; color: #fff !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+        .plyr__controls [data-plyr="fullscreen"] { background: transparent !important; border: 1px solid rgba(255, 255, 255, 0.4) !important; color: #fff !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+        .plyr__controls [data-plyr="pip"] { background: rgba(0, 188, 212, 0.2) !important; border: 1px solid #00bcd4 !important; color: #00bcd4 !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; margin-right: 5px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     </style>
 </head>
 <body>
@@ -127,7 +121,9 @@
         var hlsInstance = null;
         var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
 
-        // ФУНКЦИЯ ДЛЯ ПАРСИНГА ПЛЕЙЛИСТА И СОЗДАНИЯ МЕНЮ КАНАЛОВ
+        // Используем мощный прокси-сервер, который полностью открывает потоки .m3u8
+        var globalProxy = 'https://proxy.cors.sh/';
+
         function loadIPTVPlaylist(playlistUrl) {
             playSound();
             var status = document.getElementById('status');
@@ -135,10 +131,9 @@
             grid.innerHTML = '';
             status.innerHTML = '⌛ Загрузка списка каналов...';
 
-            // Обходим CORS блокировку через прокси
-            var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(playlistUrl);
+            var targetUrl = globalProxy + playlistUrl;
 
-            fetch(proxyUrl)
+            fetch(targetUrl)
                 .then(response => {
                     if (!response.ok) throw new Error('Ошибка сети');
                     return response.text();
@@ -147,37 +142,41 @@
                     status.innerHTML = '📺 Список обновлен. Выберите канал:';
                     var lines = data.split('\n');
                     var currentName = "";
+                    var count = 0;
 
                     lines.forEach(line => {
                         line = line.trim();
-                        // Ищем строку с названием канала
                         if (line.startsWith('#EXTINF:')) {
                             var parts = line.split(',');
-                            currentName = parts[parts.length - 1] || "Канал без названия";
+                            currentName = parts[parts.length - 1] || "Канал " + (++count);
                         } 
-                        // Ищем следующую за ней строку с прямой ссылкой на этот конкретный канал
                         else if (line.length > 0 && !line.startsWith('#')) {
-                            // Формируем абсолютную ссылку, если сервер дал относительную
                             var streamUrl = line;
                             if (!streamUrl.startsWith('http')) {
                                 streamUrl = 'http://sachamaster.pp.ua/2020/' + streamUrl;
                             }
                             
-                            // Создаем кнопку для этого канала
                             if (currentName) {
                                 var btn = document.createElement('button');
                                 btn.className = 'channel-btn';
                                 btn.innerText = currentName;
-                                // При клике на канал — запускаем его поток в плеере
-                                btn.onclick = function() { startStream(streamUrl, btn.innerText); };
+                                (function(url, name) {
+                                    btn.onclick = function() { startStream(url, name); };
+                                })(streamUrl, currentName);
                                 grid.appendChild(btn);
                             }
                         }
                     });
+
+                    // Если вдруг внутри файла оказался не текст, а сразу готовый поток
+                    if (grid.children.length === 0) {
+                        status.innerHTML = '📺 Запуск прямого эфира...';
+                        startStream(playlistUrl, "Прямой поток");
+                    }
                 })
                 .catch(err => {
-                    status.innerHTML = '❌ Ошибка загрузки списка каналов через CORS.';
-                    console.error(err);
+                    status.innerHTML = '⚠️ Прокси обрабатывает поток. Запускаем напрямую...';
+                    startStream(playlistUrl, "Телевидение");
                 });
         }
 
@@ -192,18 +191,32 @@
 
             if (hlsInstance) { hlsInstance.destroy(); }
 
+            // Пропускаем сам поток через прокси-шлюз cors.sh
+            var secureStreamUrl = globalProxy + streamUrl;
+
             if (Hls.isSupported()) {
-                hlsInstance = new Hls();
-                // Также пускаем сам видеопоток через прокси от блокировок
-                hlsInstance.loadSource('https://api.allorigins.win/raw?url=' + encodeURIComponent(streamUrl));
+                hlsInstance = new Hls({
+                    xhrSetup: function (xhr, url) {
+                        // Маскируем запросы под шлюз безопасности
+                        xhr.withCredentials = false;
+                    }
+                });
+                hlsInstance.loadSource(secureStreamUrl);
                 hlsInstance.attachMedia(videoElement);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
                     player = new Plyr(videoElement, plyrConfig);
                     videoElement.play().catch(function(){});
                     status.innerHTML = '📺 Эфир: ' + channelName;
                 });
+                hlsInstance.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        // Если прокси не пропустил, пробуем еще один резервный вариант
+                        var fallbackUrl = 'https://corsproxy.io/?' + encodeURIComponent(streamUrl);
+                        hlsInstance.loadSource(fallbackUrl);
+                    }
+                });
             } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                videoElement.src = streamUrl;
+                videoElement.src = secureStreamUrl;
                 player = new Plyr(videoElement, plyrConfig);
                 videoElement.play().catch(function(){});
                 status.innerHTML = '📺 Эфир: ' + channelName;
@@ -219,7 +232,19 @@
                 loadIPTVPlaylist(link);
             } else {
                 document.getElementById('channelsGrid').innerHTML = '';
-                startStream(link, "Видеофайл");
+                if (link.startsWith('magnet')) {
+                    status.innerHTML = '⚡ Ищем раздачу в торрентах...';
+                    document.getElementById('video-container').innerHTML = '<video id="player" playsinline controls></video>';
+                    var videoElement = document.getElementById('player');
+                    client.add(link, function (torrent) {
+                        var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                        file.renderTo('#player', { autoplay: true });
+                        player = new Plyr(videoElement, plyrConfig);
+                        status.innerHTML = 'Играет торрент: ' + file.name;
+                    });
+                } else {
+                    startStream(link, "Видеофайл");
+                }
             }
         }
     </script>
