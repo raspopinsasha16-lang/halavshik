@@ -1,4 +1,111 @@
-<script>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Халявщик | Pro Player & IPTV</title>
+    <!-- Библиотеки: Plyr, WebTorrent и Декодер IPTV (HLS.js) -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: linear-gradient(rgba(20, 20, 20, 0.78), rgba(20, 20, 20, 0.78)), url('bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px 10px;
+            text-align: center;
+            min-height: 100vh;
+        }
+        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 5px; font-size: 28px; }
+        .sub-title { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; margin-bottom: 20px; font-size: 14px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        .search-box { background: rgba(34, 34, 34, 0.85); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .search-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 16px; text-align: center; outline: none; }
+        .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
+        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; }
+        .btn-google { background: #4285F4; }
+        .btn-torrent { background: #248a3d; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; background: rgba(45, 45, 45, 0.7); padding: 12px 15px; margin-top: 15px; border-radius: 8px; font-weight: bold; }
+        .link-card { display: flex; justify-content: space-between; align-items: center; background: rgba(34, 34, 34, 0.85); padding: 12px 15px; margin: 8px 0; border-radius: 8px; }
+        .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; display: block; width: 100%; text-align: left; }
+        .tag { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .tag.online { background: #e50914; }
+        .tag.torrent { background: #248a3d; }
+
+        .player-box { background: rgba(20, 20, 20, 0.95); border: 2px dashed #e50914; padding: 15px; border-radius: 12px; margin-top: 25px; }
+        .player-box h3 { color: #e50914; margin-top: 0; }
+        .player-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; text-align: center; }
+        
+        .player-buttons { display: flex; gap: 10px; margin-bottom: 5px; }
+        .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 2; font-size: 15px; }
+        .tv-quick-btn { background: #248a3d; color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; font-size: 15px; white-space: nowrap; }
+        
+        #video-container { margin-top: 15px; border-radius: 8px; overflow: hidden; background: #000; }
+        #status { font-size: 13px; color: #00bcd4; margin: 10px 0; font-weight: bold; }
+
+        /* Сетка для автоматически созданных ТВ-каналов */
+        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
+        .channel-btn { background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .channel-btn:hover { background: #e50914; border-color: #e50914; }
+
+        /* КАСТОМИЗАЦИЯ КНОПОК ПЛЕЕРА PLYR */
+        .plyr__controls [data-plyr="play"] {
+            background: #e50914 !important; color: #fff !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;
+        }
+        .plyr__controls [data-plyr="fullscreen"] {
+            background: transparent !important; border: 1px solid rgba(255, 255, 255, 0.4) !important; color: #fff !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;
+        }
+        .plyr__controls [data-plyr="pip"] {
+            background: rgba(0, 188, 212, 0.2) !important; border: 1px solid #00bcd4 !important; color: #00bcd4 !important; border-radius: 4px !important; width: 34px !important; height: 34px !important; padding: 0 !important; margin-right: 5px !important; display: flex !important; align-items: center !important; justify-content: center !important;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+
+    <div class="container">
+        <h1>Халявщик</h1>
+        <div class="sub-title">Твой личный медиа-хаб</div>
+
+        <div class="search-box">
+            <input type="text" id="movieSearch" placeholder="Введите название фильма..." oninput="checkSearch()">
+            <div class="search-buttons" id="searchBtns">
+                <a href="#" id="goGoogle" onclick="playSound()" target="_blank" class="search-btn btn-google">В Google</a>
+                <a href="#" id="goRutor" onclick="playSound()" target="_blank" class="search-btn btn-torrent">На Rutor</a>
+            </div>
+        </div>
+
+        <div class="section-header">Смотреть онлайн</div>
+        <div class="link-card"><a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a><span class="tag online">Онлайн</span></div>
+
+        <div class="section-header">Скачать торрентом</div>
+        <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a><span class="tag torrent">Торрент</span></div>
+        <div class="link-card"><a href="https://nnmclub.to" onclick="playSound()" target="_blank">NNM-Club</a><span class="tag torrent">Торрент</span></div>
+        <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a><span class="tag torrent">Торрент</span></div>
+
+        <!-- Поле кинотеатра -->
+        <div class="player-box">
+            <h3>🎬 Кинотеатр & IPTV</h3>
+            <input type="text" id="torrentUrl" placeholder="Вставь ссылку или Magnet 🧲">
+            <div class="player-buttons">
+                <button class="main-play-btn" onclick="playAction(null)">Включить плеер</button>
+                <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
+            </div>
+            <div id="status"></div>
+            <div id="video-container"></div>
+            <!-- Сюда скрипт сам добавит меню каналов -->
+            <div class="tv-channels-grid" id="channelsGrid"></div>
+        </div>
+    </div>
+
+    <script>
         function playSound() { 
             var audio = document.getElementById('clickSound');
             audio.currentTime = 0;
@@ -17,72 +124,102 @@
 
         var client = new WebTorrent();
         var player;
+        var hlsInstance = null;
+        var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
 
-        function playAction() {
+        // ФУНКЦИЯ ДЛЯ ПАРСИНГА ПЛЕЙЛИСТА И СОЗДАНИЯ МЕНЮ КАНАЛОВ
+        function loadIPTVPlaylist(playlistUrl) {
             playSound();
-            var link = document.getElementById('torrentUrl').value.trim();
+            var status = document.getElementById('status');
+            var grid = document.getElementById('channelsGrid');
+            grid.innerHTML = '';
+            status.innerHTML = '⌛ Загрузка списка каналов...';
+
+            // Обходим CORS блокировку через прокси
+            var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(playlistUrl);
+
+            fetch(proxyUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Ошибка сети');
+                    return response.text();
+                })
+                .then(data => {
+                    status.innerHTML = '📺 Список обновлен. Выберите канал:';
+                    var lines = data.split('\n');
+                    var currentName = "";
+
+                    lines.forEach(line => {
+                        line = line.trim();
+                        // Ищем строку с названием канала
+                        if (line.startsWith('#EXTINF:')) {
+                            var parts = line.split(',');
+                            currentName = parts[parts.length - 1] || "Канал без названия";
+                        } 
+                        // Ищем следующую за ней строку с прямой ссылкой на этот конкретный канал
+                        else if (line.length > 0 && !line.startsWith('#')) {
+                            // Формируем абсолютную ссылку, если сервер дал относительную
+                            var streamUrl = line;
+                            if (!streamUrl.startsWith('http')) {
+                                streamUrl = 'http://sachamaster.pp.ua/2020/' + streamUrl;
+                            }
+                            
+                            // Создаем кнопку для этого канала
+                            if (currentName) {
+                                var btn = document.createElement('button');
+                                btn.className = 'channel-btn';
+                                btn.innerText = currentName;
+                                // При клике на канал — запускаем его поток в плеере
+                                btn.onclick = function() { startStream(streamUrl, btn.innerText); };
+                                grid.appendChild(btn);
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    status.innerHTML = '❌ Ошибка загрузки списка каналов через CORS.';
+                    console.error(err);
+                });
+        }
+
+        function startStream(streamUrl, channelName) {
+            playSound();
             var container = document.getElementById('video-container');
             var status = document.getElementById('status');
             
-            if(!link) { alert('Вставь ссылку!'); return; }
-            status.innerHTML = 'Подключение...';
+            status.innerHTML = '🚀 Запуск: ' + channelName + '...';
             container.innerHTML = '<video id="player" playsinline controls></video>';
             var videoElement = document.getElementById('player');
-            
-            var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
 
-            // 1. УМНАЯ НАСТРОЙКА IPTV ПОТОКА С ОБХОДОМ БЛОКИРОВОК БРАУЗЕРА
-            if (link.includes('.m3u8') || link.includes('m3u8')) {
-                status.innerHTML = '📺 Обход защиты и запуск ТВ...';
-                
-                // Используем бесплатный прокси для обхода CORS ограничений браузера
-                var proxyLink = 'https://cors-anywhere.herokuapp.com/' + link;
-                
-                // Если ссылка тестовая (которую я давала), её проксировать не нужно
-                if (link.includes('mux.dev')) { proxyLink = link; }
+            if (hlsInstance) { hlsInstance.destroy(); }
 
-                if (Hls.isSupported()) {
-                    var hls = new Hls();
-                    hls.loadSource(proxyLink);
-                    hls.attachMedia(videoElement);
-                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                        player = new Plyr(videoElement, plyrConfig);
-                        videoElement.play().catch(function(){});
-                        status.innerHTML = '📺 Прямой эфир запущен';
-                    });
-                    
-                    // Если прокси перегружен, пробуем запустить напрямую как запасной вариант
-                    hls.on(Hls.Events.ERROR, function (event, data) {
-                        if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR) {
-                            hls.loadSource(link);
-                        }
-                    });
-
-                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                    videoElement.src = link;
+            if (Hls.isSupported()) {
+                hlsInstance = new Hls();
+                // Также пускаем сам видеопоток через прокси от блокировок
+                hlsInstance.loadSource('https://api.allorigins.win/raw?url=' + encodeURIComponent(streamUrl));
+                hlsInstance.attachMedia(videoElement);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
                     player = new Plyr(videoElement, plyrConfig);
                     videoElement.play().catch(function(){});
-                    status.innerHTML = '📺 Прямой эфир запущен';
-                } else {
-                    status.innerHTML = '❌ Браузер не поддерживает IPTV потоки.';
-                }
-            } 
-            // 2. ПРОВЕРКА НА ТОРРЕНТ-МАГНИТ
-            else if (link.startsWith('magnet')) {
-                status.innerHTML = '⚡ Ищем раздачу в торрентах...';
-                client.add(link, function (torrent) {
-                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    file.renderTo('#player', { autoplay: true });
-                    player = new Plyr(videoElement, plyrConfig);
-                    status.innerHTML = 'Играет торрент: ' + file.name;
+                    status.innerHTML = '📺 Эфир: ' + channelName;
                 });
-            } 
-            // 3. ОБЫЧНЫЙ СТАНДАРТНЫЙ ВИДЕОФАЙЛ
-            else {
-                videoElement.src = link;
+            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                videoElement.src = streamUrl;
                 player = new Plyr(videoElement, plyrConfig);
                 videoElement.play().catch(function(){});
-                status.innerHTML = '🎥 Воспроизведение видеофайла...';
+                status.innerHTML = '📺 Эфир: ' + channelName;
+            }
+        }
+
+        function playAction(forcedLink) {
+            playSound();
+            var link = forcedLink ? forcedLink : document.getElementById('torrentUrl').value.trim();
+            if(!link) { alert('Вставь ссылку!'); return; }
+            
+            if (link.includes('.m3u8') || link.includes('m3u8')) {
+                loadIPTVPlaylist(link);
+            } else {
+                document.getElementById('channelsGrid').innerHTML = '';
+                startStream(link, "Видеофайл");
             }
         }
     </script>
