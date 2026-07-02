@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Халявщик | Pro Player</title>
-    <!-- Библиотеки: Plyr (интерфейс плеера) и WebTorrent -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
@@ -38,11 +37,58 @@
         .tag.torrent { background: #248a3d; }
 
         .player-box { background: rgba(20, 20, 20, 0.95); border: 2px dashed #e50914; padding: 15px; border-radius: 12px; margin-top: 25px; }
-        .player-box h3 { color: #e50914; }
+        .player-box h3 { color: #e50914; margin-top: 0; }
         .player-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; text-align: center; }
-        .player-box button { background: #e50914; color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-        #video-container { margin-top: 15px; }
-        #status { font-size: 13px; color: #00bcd4; margin: 10px 0; }
+        .player-box button.main-play-btn { background: #e50914; color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        #video-container { margin-top: 15px; border-radius: 8px; overflow: hidden; background: #000; }
+        #status { font-size: 13px; color: #00bcd4; margin: 10px 0; font-weight: bold; }
+
+        /* ТВОЯ КАСТОМИЗАЦИЯ КНОПОК ПЛЕЕРА PLYR */
+        
+        /* 1. Маленькая квадратная кнопка запуска (Play) на красном фоне */
+        .plyr__controls [data-plyr="play"] {
+            background: #e50914 !important;
+            color: #fff !important;
+            border-radius: 4px !important;
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .plyr__controls [data-plyr="play"]:hover { background: #b80710 !important; }
+
+        /* 2. Кнопка расширения экрана (Fullscreen) в прозрачном квадратике с рамкой */
+        .plyr__controls [data-plyr="fullscreen"] {
+            background: transparent !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            color: #fff !important;
+            border-radius: 4px !important;
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .plyr__controls [data-plyr="fullscreen"]:hover { background: rgba(255, 255, 255, 0.1) !important; border-color: #fff !important; }
+
+        /* 3. Выделенная кнопка выноса экрана (Picture-in-Picture) в отдельное окошко */
+        .plyr__controls [data-plyr="pip"] {
+            background: rgba(0, 188, 212, 0.2) !important; /* Легкий неоновый оттенок */
+            border: 1px solid #00bcd4 !important;
+            color: #00bcd4 !important;
+            border-radius: 4px !important;
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            margin-right: 5px !important; /* Немного отодвинем */
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .plyr__controls [data-plyr="pip"]:hover { background: #00bcd4 !important; color: #fff !important; }
     </style>
 </head>
 <body>
@@ -72,14 +118,18 @@
         <div class="player-box">
             <h3>🎬 Кинотеатр Халявщика</h3>
             <input type="text" id="torrentUrl" placeholder="Вставь ссылку или Magnet 🧲">
-            <button onclick="playAction()">Включить плеер</button>
+            <button class="main-play-btn" onclick="playAction()">Включить плеер</button>
             <div id="status"></div>
             <div id="video-container"></div>
         </div>
     </div>
 
     <script>
-        function playSound() { document.getElementById('clickSound').play(); }
+        function playSound() { 
+            var audio = document.getElementById('clickSound');
+            audio.currentTime = 0;
+            audio.play().catch(function(e){}); 
+        }
         
         function checkSearch() {
             var query = document.getElementById('movieSearch').value.trim();
@@ -108,12 +158,16 @@
                 client.add(link, function (torrent) {
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
                     file.renderTo('#player', { autoplay: true });
-                    player = new Plyr('#player');
+                    player = new Plyr('#player', {
+                        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen']
+                    });
                     status.innerHTML = 'Играет: ' + file.name;
                 });
             } else {
                 document.getElementById('player').src = link;
-                player = new Plyr('#player');
+                player = new Plyr('#player', {
+                    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen']
+                });
                 player.play();
                 status.innerHTML = 'Воспроизведение...';
             }
