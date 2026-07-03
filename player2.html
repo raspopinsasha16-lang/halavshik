@@ -3,55 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>ТВ Плеер</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #000; color: #fff; padding: 20px; text-align: center; }
-        .box { max-width: 600px; margin: 0 auto; background: #111; padding: 20px; border-radius: 15px; }
-        #videoPlayer { width: 100%; }
-        .btn { display: block; background: #e50914; color: #fff; border: none; padding: 15px; margin: 10px 0; width: 100%; border-radius: 8px; cursor: pointer; }
+        body { background: #000; color: #fff; text-align: center; padding: 20px; font-family: sans-serif; }
+        .box { max-width: 600px; margin: 0 auto; }
+        video { width: 100%; border: 2px solid #e50914; background: #000; }
+        .btn { display: block; width: 100%; padding: 15px; margin-top: 10px; background: #e50914; color: white; border: none; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <button class="btn" onclick="loadChannels()">📺 Загрузить каналы</button>
-        <video id="videoPlayer" playsinline controls></video>
-        <div id="grid"></div>
-    </div>
+<div class="box">
+    <video id="v" controls playsinline></video>
+    <button class="btn" onclick="playIt()">Запустить канал Саша Мастер</button>
+</div>
 
 <script>
-    const video = document.getElementById('videoPlayer');
-    const player = new Plyr(video);
-    let hls = new Hls();
-
-    function loadChannels() {
-        // Мы берем данные из твоего файла tv.m3u
-        fetch('tv.m3u?t=' + new Date().getTime())
-            .then(r => r.text())
-            .then(data => {
-                const grid = document.getElementById('grid');
-                grid.innerHTML = '';
-                const lines = data.split('\n');
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].startsWith('#EXTINF:')) {
-                        let name = lines[i].split(',')[1];
-                        let url = lines[i+1].trim();
-                        let btn = document.createElement('button');
-                        btn.className = 'btn';
-                        btn.innerText = name;
-                        btn.onclick = () => {
-                            hls.destroy();
-                            hls = new Hls();
-                            // Используем прокси, чтобы обойти блокировку
-                            hls.loadSource('https://corsproxy.io/?' + encodeURIComponent(url));
-                            hls.attachMedia(video);
-                            video.play();
-                        };
-                        grid.appendChild(btn);
-                    }
-                }
-            });
+    function playIt() {
+        const v = document.getElementById('v');
+        const url = 'https://corsproxy.io/?http://sachamaster.pp.ua/2020/2020399.m3u8';
+        
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(v);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
+        } else {
+            v.src = url;
+            v.play();
+        }
     }
 </script>
 </body>
