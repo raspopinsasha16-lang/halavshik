@@ -1,3 +1,7 @@
 #EXTM3U
-#EXTINF:-1, Мой IPTV Плейлист
-http://sachamaster.pp.ua/2020/2020399.m3u8
+#EXTINF:-1, Настоящее Время HD
+https://currenttime.akamaized.net/hls/live/2033896/currenttime/ct-hd/master.m3u8
+#EXTINF:-1, DW На Русском
+https://dwamdstream102-i.akamaihd.net/hls/live/2013985/dwamdstream102/index.m3u8
+#EXTINF:-1, Euronews Russian
+https://euronews-ru.md.akamaized.net/hls/live/2022712/ereu/ru/master_1500.m3u8
