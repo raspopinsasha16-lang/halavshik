@@ -21,25 +21,8 @@
         .link-card { background: #1a1a1a; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; }
         .link-card a { color: #fff; text-decoration: none; font-weight: bold; display: block; }
         
-        /* Блок кнопок одинакового размера */
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px; /* Расстояние между кнопками */
-            margin-top: 20px;
-        }
-        .btn { 
-            padding: 15px; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            text-decoration: none; 
-            color: #fff; 
-            font-size: 16px;
-            width: 100%; /* Растягиваем на всю ширину контейнера */
-            box-sizing: border-box; /* Чтобы отступы не ломали размер */
-        }
+        .button-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .btn { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; color: #fff; font-size: 16px; width: 100%; box-sizing: border-box; }
         .btn-tv { background: #d4af37; color: #000; }
         .btn-cinema { background: #e50914; }
     </style>
@@ -52,10 +35,12 @@
         <img src="logo.png" alt="Логотип" class="site-logo">
         <h1>ХАЛЯВЩИК</h1>
         
+        <!-- Кнопки на сайты -->
         <div class="link-card"><a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a></div>
         <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a></div>
         <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a></div>
 
+        <!-- Плеерные кнопки -->
         <div class="button-group">
             <a href="player2.html" class="btn btn-tv" onclick="playSound()">📺 Онлайн ТВ</a>
             <a href="player.html" class="btn btn-cinema" onclick="playSound()">🎬 Кинотеатр</a>
