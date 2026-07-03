@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ХАЛЯВЩИК | Телевидение IPTV</title>
@@ -34,7 +33,6 @@
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .player-buttons { display: flex; justify-content: center; margin-bottom: 15px; }
         
-        /* Кнопка Моё ТВ на всю ширину */
         .tv-quick-btn { 
             background: #d4af37; 
             color: #000; 
@@ -83,8 +81,9 @@
 <script>
     var player = null;
     var hlsInstance = null;
-    // Твой неизменный адрес плейлиста
-    var playlistUrl = 'http://sachamaster.pp.ua/2020/2020399.m3u8';
+    
+    // Теперь загружаем файл прямо из твоего же репозитория!
+    var playlistUrl = 'tv.m3u';
 
     function loadIPTVPlaylist() {
         const statusEl = document.getElementById('status');
@@ -92,12 +91,12 @@
         const videoCont = document.getElementById('video-container');
 
         gridEl.innerHTML = ''; 
-        statusEl.innerText = 'Загрузка списка каналов напрямую...';
+        statusEl.innerText = 'Загрузка локального списка каналов...';
         videoCont.style.display = 'none';
 
         if(hlsInstance) hlsInstance.destroy();
 
-        // Пробуем загрузить напрямую без прокси
+        // Читаем свой собственный файл проекта
         fetch(playlistUrl)
             .then(response => {
                 if (!response.ok) throw new Error();
@@ -107,14 +106,7 @@
                 parsePlaylist(data);
             })
             .catch(() => {
-                // Если напрямую не вышло из-за браузера, используем легкий резервный сборщик данных
-                statusEl.innerText = 'Прямое подключение не удалось. Пробуем резервный путь...';
-                fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(playlistUrl))
-                    .then(r => r.text())
-                    .then(data => parsePlaylist(data))
-                    .catch(() => {
-                        statusEl.innerText = 'Ошибка соединения. Пожалуйста, попробуйте еще раз.';
-                    });
+                statusEl.innerText = 'Не удалось найти файл tv.m3u на сервере.';
             });
     }
 
@@ -138,9 +130,9 @@
         }
         
         if(channelCount > 0) {
-            statusEl.innerText = `Успешно! Найдено каналов: ${channelCount}. Выберите канал.`;
+            statusEl.innerText = `Успешно! Загружено каналов: ${channelCount}. Выберите канал.`;
         } else {
-            statusEl.innerText = 'Список пуст или формат не распознан.';
+            statusEl.innerText = 'Файл tv.m3u пуст или имеет неверный формат.';
         }
     }
 
@@ -176,7 +168,7 @@
             });
             hlsInstance.on(Hls.Events.ERROR, function(event, data) {
                 if(data.fatal) {
-                    statusEl.innerText = 'Ошибка воспроизведения. Попробуйте другой канал.';
+                    statusEl.innerText = 'Ошибка воспроизведения потока.';
                 }
             });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
