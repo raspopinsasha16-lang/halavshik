@@ -83,7 +83,9 @@
 <script>
     var player = null;
     var hlsInstance = null;
-    var playlistUrl = 'tv.m3u';
+    
+    // Прямая ссылка на оригинальный плейлист
+    var playlistUrl = 'http://sachamaster.pp.ua/2020/2020399.m3u8';
 
     function loadIPTVPlaylist() {
         const statusEl = document.getElementById('status');
@@ -91,21 +93,26 @@
         const videoCont = document.getElementById('video-container');
 
         gridEl.innerHTML = ''; 
-        statusEl.innerText = 'Загрузка локального списка каналов...';
+        statusEl.innerText = 'Подключаемся к серверу каналов...';
         videoCont.style.display = 'none';
 
         if(hlsInstance) hlsInstance.destroy();
 
-        fetch(playlistUrl)
+        // Используем специальный CORS-прокси для обхода ограничений http/https браузера
+        fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(playlistUrl))
             .then(response => {
                 if (!response.ok) throw new Error();
-                return response.text();
+                return response.json(); // Аллориджинс возвращает JSON объект
             })
             .then(data => {
-                parsePlaylist(data);
+                if (data.contents) {
+                    parsePlaylist(data.contents);
+                } else {
+                    throw new Error();
+                }
             })
             .catch(() => {
-                statusEl.innerText = 'Не удалось найти файл tv.m3u на сервере. Проверьте, создан ли он.';
+                statusEl.innerText = 'Не удалось загрузить каналы. Попробуйте ещё раз через пару секунд.';
             });
     }
 
@@ -119,6 +126,13 @@
                 let infoLine = lines[i];
                 let urlLine = lines[i+1];
                 
+                // Пропускаем пустые строки в поисках ссылки
+                let nextIdx = i + 1;
+                while(lines[nextIdx] && !lines[nextIdx].trim().startsWith('http')) {
+                    nextIdx++;
+                }
+                urlLine = lines[nextIdx];
+                
                 if(urlLine && urlLine.trim().startsWith('http')) {
                     let nameMatch = infoLine.match(/,(.*)$/);
                     let channelName = nameMatch ? nameMatch[1].trim() : 'Без названия';
@@ -131,7 +145,7 @@
         if(channelCount > 0) {
             statusEl.innerText = `Успешно! Загружено каналов: ${channelCount}. Выберите канал.`;
         } else {
-            statusEl.innerText = 'Файл tv.m3u пуст или имеет неверный формат.';
+            statusEl.innerText = 'Не удалось распознать каналы в плейлисте.';
         }
     }
 
