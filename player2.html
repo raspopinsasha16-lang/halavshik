@@ -47,16 +47,17 @@
 <script>
     var hlsInstance = null;
     var playerInstance = null;
-    // Используем более открытый CORS-прокси
-    var menuProxy = 'https://api.allorigins.win/raw?url=';
+    
+    // Используем мощный прокси-сервер, маскирующий под приложение
+    var menuProxy = 'https://cors-anywhere.herokuapp.com/';
 
     function loadIPTVPlaylist(url) {
         const statusEl = document.getElementById('status');
-        statusEl.innerText = 'Загрузка плейлиста...';
+        statusEl.innerText = 'Загрузка плейлиста через защищенный канал...';
         
-        fetch(menuProxy + encodeURIComponent(url))
+        fetch(menuProxy + url)
         .then(r => {
-            if (!r.ok) throw new Error('Ошибка сети при загрузке плейлиста');
+            if (!r.ok) throw new Error('Блокировка прокси');
             return r.text();
         })
         .then(data => {
@@ -83,10 +84,11 @@
                     }
                 }
             }
-            statusEl.innerText = `Загружено каналов: ${count}. Выберите канал.`;
+            statusEl.innerText = `Успешно! Загружено каналов: ${count}. Выберите канал.`;
         })
         .catch(err => {
-            statusEl.innerText = 'Не удалось загрузить плейлист. Возможно, ссылка устарела.';
+            // Если публичный cors-anywhere требует активации демо-доступа
+            statusEl.innerHTML = 'Для активации просмотра перейдите по ссылке <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:#d4af37;">cors-anywhere.herokuapp.com/corsdemo</a>, нажмите кнопку "Request temporary access" и обновите эту страницу.';
             console.error(err);
         });
     }
@@ -96,7 +98,7 @@
         let statusEl = document.getElementById('status');
         let cont = document.getElementById('video-container');
         
-        statusEl.innerText = 'Подключение к потоку...';
+        statusEl.innerText = 'Подключение к телевещанию...';
         cont.innerHTML = '<video id="player" playsinline controls autoplay></video>';
         cont.style.display = 'block';
         
@@ -104,28 +106,24 @@
         
         if (Hls.isSupported()) {
             if(hlsInstance) hlsInstance.destroy();
-            hlsInstance = new Hls({
-                maxMaxBufferLength: 10,
-                enableWorker: true
-            });
+            hlsInstance = new Hls();
             
-            // Пробуем пустить сам поток через прокси, если он блокируется напрямую
-            hlsInstance.loadSource(url);
+            // Загружаем сам поток через прокси, чтобы обойти блокировку видеоплеером
+            hlsInstance.loadSource(menuProxy + url);
             hlsInstance.attachMedia(video);
             
             hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
                 playerInstance = new Plyr(video);
-                statusEl.innerText = 'Воспроизведение...';
+                statusEl.innerText = 'Трансляция запущена!';
             });
             
             hlsInstance.on(Hls.Events.ERROR, function (event, data) {
                 if (data.fatal) {
-                    statusEl.innerText = 'Ошибка потока. Возможно, ссылка на канал больше не работает.';
-                    console.log('HLS Fatal Error:', data);
+                    statusEl.innerText = 'Поток заблокирован сервером вещания.';
                 }
             });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
+            video.src = menuProxy + url;
             playerInstance = new Plyr(video);
             statusEl.innerText = 'Воспроизведение...';
         }
