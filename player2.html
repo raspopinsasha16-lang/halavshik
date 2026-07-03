@@ -43,14 +43,13 @@
         .main-play-btn:hover { background: #ff1f1f; }
         .tv-quick-btn { background: #d4af37; color: #000; border: 1px solid #c4a030; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; transition: 0.3s; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
         .tv-quick-btn:hover { background: #eac65c; }
-        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.7); }
+        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.7); display: none; }
         #status { font-size: 14px; color: #b3b3b3; margin: 12px 0; font-weight: bold; }
         .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
         .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: 0.2s; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; transition: 0.3s; }
         .back-btn:hover { color: #fff; }
-        .plyr__controls { data-plyr="play"] { background: #e50914 !important; color: #fff !important; }
     </style>
 </head>
 <body>
@@ -62,13 +61,13 @@
     
     <div class="player-box">
         <h1 id="tvTitle">Онлайн ТВ & IPTV</h1>
-        <input type="text" id="streamUrl" placeholder="Вставь ссылку на .m3u8 поток или плейлист">
+        <input type="text" id="streamUrl" value="http://sachamaster.pp.ua/2020/2020399.m3u8" placeholder="Вставь ссылку на .m3u8 поток или плейлист">
         <div class="player-buttons">
             <button class="main-play-btn" onclick="playAction()">Включить поток</button>
             <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
         </div>
         
-        <div id="status">Вставьте .m3u8 ссылку или запустите «Моё ТВ»</div>
+        <div id="status">Нажмите «Моё ТВ» или «Включить поток» для загрузки плейлиста</div>
         <div id="video-container"></div>
         <div class="tv-channels-grid" id="channelsGrid"></div>
     </div>
@@ -165,10 +164,14 @@
         const input = document.getElementById('streamUrl').value.trim();
         const statusEl = document.getElementById('status');
         
-        if(input.includes('.m3u8') || input.startsWith('http')) {
+        if (input.includes('.m3u8') && !input.includes('#EXTM3U')) {
+            // Если это ссылка на конкретный поток (.m3u8)
             playM3U8(input);
+        } else if (input.startsWith('http')) {
+            // Если это ссылка на плейлист, загружаем его сетку
+            loadIPTVPlaylist(input);
         } else {
-            statusEl.innerText = 'Формат не поддерживается. Для ТВ нужна .m3u8 ссылка.';
+            statusEl.innerText = 'Формат не поддерживается. Нужна рабочая ссылка.';
         }
     }
 
