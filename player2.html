@@ -51,8 +51,8 @@
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; display: none; }
         #status { font-size: 15px; color: #00bcd4; margin: 15px 0; font-weight: bold; }
         
-        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
-        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+        .tv-channels-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 8px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
+        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 16px; font-weight: bold; }
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
         
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 20px; font-weight: bold; }
@@ -81,7 +81,7 @@
 <script>
     var player = null;
     var hlsInstance = null;
-    var playlistUrl = 'http://sachamaster.pp.ua/2020/2020399.m3u8';
+    var playlistUrl = 'tv.m3u';
 
     function loadIPTVPlaylist() {
         const statusEl = document.getElementById('status');
@@ -89,47 +89,38 @@
         const videoCont = document.getElementById('video-container');
 
         gridEl.innerHTML = ''; 
-        statusEl.innerText = 'Подключаемся к серверу каналов...';
+        statusEl.innerText = 'Загрузка локального списка...';
         videoCont.style.display = 'none';
 
         if(hlsInstance) hlsInstance.destroy();
 
-        fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(playlistUrl))
+        fetch(playlistUrl)
             .then(response => {
                 if (!response.ok) throw new Error();
-                return response.json();
+                return response.text();
             })
             .then(data => {
-                if (data.contents) {
-                    parsePlaylist(data.contents);
-                } else {
-                    throw new Error();
-                }
+                parsePlaylist(data);
             })
             .catch(() => {
-                statusEl.innerText = 'Не удалось загрузить каналы. Попробуйте еще раз.';
+                statusEl.innerText = 'Файл tv.m3u не найден на сервере.';
             });
     }
 
     function parsePlaylist(data) {
         const statusEl = document.getElementById('status');
-        // Разбиваем строки учитывая любые варианты переносов (Windows/Linux)
         const lines = data.split(/\r?\n/);
         let channelCount = 0;
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
             if (line.startsWith('#EXTINF:')) {
-                // Ищем следующую строку, которая содержит саму ссылку
                 let urlLine = '';
                 for (let j = i + 1; j < lines.length; j++) {
                     let nextLine = lines[j].trim();
                     if (nextLine.startsWith('http')) {
                         urlLine = nextLine;
                         break;
-                    }
-                    if (nextLine.startsWith('#')) {
-                        break; // Начался другой тег, ссылки нет
                     }
                 }
                 
@@ -143,9 +134,9 @@
         }
         
         if (channelCount > 0) {
-            statusEl.innerText = `Успешно! Загружено каналов: ${channelCount}. Выберите канал.`;
+            statusEl.innerText = `Плейлист успешно подключен!`;
         } else {
-            statusEl.innerText = 'Не удалось распознать каналы. Проверьте структуру ссылки.';
+            statusEl.innerText = 'Ошибка чтения структуры tv.m3u.';
         }
     }
 
@@ -167,7 +158,7 @@
         
         const video = document.getElementById('player');
         const statusEl = document.getElementById('status');
-        statusEl.innerText = 'Запуск эфира...';
+        statusEl.innerText = 'Запуск трансляции...';
 
         if (Hls.isSupported()) {
             if(hlsInstance) hlsInstance.destroy();
@@ -177,18 +168,18 @@
             hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
                 player = new Plyr(video);
                 video.play().catch(() => {});
-                statusEl.innerText = 'Трансляция запущена!';
+                statusEl.innerText = 'Эфир запущен!';
             });
             hlsInstance.on(Hls.Events.ERROR, function(event, data) {
                 if(data.fatal) {
-                    statusEl.innerText = 'Ошибка воспроизведения потока.';
+                    statusEl.innerText = 'Не удалось запустить поток.';
                 }
             });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
             player = new Plyr(video);
             video.play().catch(() => {});
-            statusEl.innerText = 'Трансляция запущена!';
+            statusEl.innerText = 'Эфир запущен!';
         }
     }
 </script>
