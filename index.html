@@ -4,21 +4,23 @@
     <meta charset="UTF-8">
     <title>ХАЛЯВЩИК | Главная</title>
     <style>
-        body { 
-            margin: 0; padding: 20px; font-family: sans-serif; text-align: center; color: #fff;
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                        url('https://upload.wikimedia.org/wikipedia/commons/e/e0/Opel_Insignia_B_facelift_IAA_2019.jpg');
-            background-size: cover; background-position: center; min-height: 100vh;
-        }
-        .container { max-width: 600px; margin: 0 auto; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #e50914; }
-        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; color: white; }
-        .tv-btn { background: #e50914; }
+        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; text-decoration: none; font-weight: bold; color: #fff; }
+        .btn-tv { background: #d4af37; color: #000; }
+        .btn-cinema { background: #e50914; }
+        .link-card { background: #222; padding: 12px; margin: 8px 0; border-radius: 8px; }
+        .link-card a { color: #fff; text-decoration: none; display: block; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>Добро пожаловать</h1>
-    <a href="player2.html" class="btn tv-btn">📺 Перейти в Плеер</a>
-</div>
+    <div class="container">
+        <h1>ХАЛЯВЩИК</h1>
+        <div class="link-card"><a href="https://ru.huyamba.name" target="_blank">Huyamba</a></div>
+        <div class="link-card"><a href="https://rutracker.org" target="_blank">RuTracker</a></div>
+        <div class="link-card"><a href="https://rutor.info" target="_blank">Rutor</a></div>
+        <a href="player2.html" class="btn btn-tv">📺 Онлайн ТВ</a>
+        <a href="player.html" class="btn btn-cinema">🎬 Кинотеатр</a>
+    </div>
 </body>
 </html>
