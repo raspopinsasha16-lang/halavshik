@@ -21,9 +21,10 @@
         .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 2; }
         .tv-quick-btn { background: #d4af37; color: #000; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; }
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; display: none; }
-        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; }
+        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; word-wrap: break-word; }
         .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
-        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; }
+        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .channel-btn:hover { background: #e50914; border-color: #e50914; }
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 20px; font-weight: bold; }
     </style>
 </head>
@@ -37,7 +38,7 @@
             <button class="main-play-btn" onclick="playAction()">Включить</button>
             <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
         </div>
-        <div id="status">Нажми «Моё ТВ»</div>
+        <div id="status">Нажми «Моё ТВ», чтобы загрузить список каналов</div>
         <div id="video-container"></div>
         <div class="tv-channels-grid" id="channelsGrid"></div>
     </div>
@@ -45,32 +46,88 @@
 </div>
 <script>
     var hlsInstance = null;
-    var menuProxy = 'https://proxy.cors.sh/';
+    var playerInstance = null;
+    // Используем более открытый CORS-прокси
+    var menuProxy = 'https://api.allorigins.win/raw?url=';
+
     function loadIPTVPlaylist(url) {
-        fetch(menuProxy + url).then(r => r.text()).then(data => {
-            document.getElementById('channelsGrid').innerHTML = '';
-            data.split('\n').forEach((line, i, arr) => {
-                if (line.startsWith('#EXTINF:')) {
-                    let name = line.split(',')[1];
-                    let urlLine = arr[i+1];
-                    let btn = document.createElement('button');
-                    btn.className = 'channel-btn';
-                    btn.innerText = name;
-                    btn.onclick = () => { document.getElementById('streamUrl').value = urlLine; playAction(); };
-                    document.getElementById('channelsGrid').appendChild(btn);
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = 'Загрузка плейлиста...';
+        
+        fetch(menuProxy + encodeURIComponent(url))
+        .then(r => {
+            if (!r.ok) throw new Error('Ошибка сети при загрузке плейлиста');
+            return r.text();
+        })
+        .then(data => {
+            const grid = document.getElementById('channelsGrid');
+            grid.innerHTML = '';
+            let count = 0;
+            
+            const lines = data.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('#EXTINF:')) {
+                    let name = lines[i].split(',')[1] || 'Канал без названия';
+                    let urlLine = lines[i+1] ? lines[i+1].trim() : '';
+                    
+                    if (urlLine && urlLine.startsWith('http')) {
+                        let btn = document.createElement('button');
+                        btn.className = 'channel-btn';
+                        btn.innerText = name.trim();
+                        btn.onclick = () => { 
+                            document.getElementById('streamUrl').value = urlLine; 
+                            playAction(); 
+                        };
+                        grid.appendChild(btn);
+                        count++;
+                    }
                 }
-            });
+            }
+            statusEl.innerText = `Загружено каналов: ${count}. Выберите канал.`;
+        })
+        .catch(err => {
+            statusEl.innerText = 'Не удалось загрузить плейлист. Возможно, ссылка устарела.';
+            console.error(err);
         });
     }
+
     function playAction() {
-        let url = document.getElementById('streamUrl').value;
-        let video = document.createElement('video');
-        video.id = 'player'; video.controls = true; video.autoplay = true;
+        let url = document.getElementById('streamUrl').value.trim();
+        let statusEl = document.getElementById('status');
         let cont = document.getElementById('video-container');
-        cont.innerHTML = ''; cont.appendChild(video); cont.style.display = 'block';
+        
+        statusEl.innerText = 'Подключение к потоку...';
+        cont.innerHTML = '<video id="player" playsinline controls autoplay></video>';
+        cont.style.display = 'block';
+        
+        let video = document.getElementById('player');
+        
         if (Hls.isSupported()) {
             if(hlsInstance) hlsInstance.destroy();
-            hlsInstance = new Hls(); hlsInstance.loadSource(url); hlsInstance.attachMedia(video);
+            hlsInstance = new Hls({
+                maxMaxBufferLength: 10,
+                enableWorker: true
+            });
+            
+            // Пробуем пустить сам поток через прокси, если он блокируется напрямую
+            hlsInstance.loadSource(url);
+            hlsInstance.attachMedia(video);
+            
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                playerInstance = new Plyr(video);
+                statusEl.innerText = 'Воспроизведение...';
+            });
+            
+            hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+                if (data.fatal) {
+                    statusEl.innerText = 'Ошибка потока. Возможно, ссылка на канал больше не работает.';
+                    console.log('HLS Fatal Error:', data);
+                }
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            playerInstance = new Plyr(video);
+            statusEl.innerText = 'Воспроизведение...';
         }
     }
 </script>
