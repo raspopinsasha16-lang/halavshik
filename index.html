@@ -2,136 +2,23 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Халявщик | Главная</title>
+    <title>ХАЛЯВЩИК | Главная</title>
     <style>
-        .site-main-logo {
-            width: 160px;
-            height: auto;
-            margin: 0 auto 20px auto;
-            display: block;
-            border-radius: 20px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.7);
+        body { 
+            margin: 0; padding: 20px; font-family: sans-serif; text-align: center; color: #fff;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url('https://upload.wikimedia.org/wikipedia/commons/e/e0/Opel_Insignia_B_facelift_IAA_2019.jpg');
+            background-size: cover; background-position: center; min-height: 100vh;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background: linear-gradient(rgba(20, 20, 20, 0.78), rgba(20, 20, 20, 0.78)), url('bg.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px 10px;
-            text-align: center;
-            min-height: 100vh;
-        }
-        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 5px; font-size: 28px; }
-        .sub-title { text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: #ccc; margin-bottom: 20px; font-size: 14px; }
-        .container { max-width: 500px; margin: 0 auto; }
-        
-        .search-box { background: rgba(34, 34, 34, 0.85); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .search-box input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 16px; text-align: center; outline: none; }
-        .search-buttons { display: flex; gap: 10px; margin-top: 10px; display: none; }
-        .search-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; font-size: 13px; text-decoration: none; }
-        .btn-google { background: #4285F4; }
-        .btn-torrent { background: #248a3d; }
-
-        .section-header { display: flex; justify-content: space-between; align-items: center; background: rgba(45, 45, 45, 0.7); padding: 12px 15px; margin-top: 15px; border-radius: 8px; font-weight: bold; }
-        .link-card { display: flex; justify-content: space-between; align-items: center; background: rgba(34, 34, 34, 0.85); padding: 12px 15px; margin: 8px 0; border-radius: 8px; }
-        .link-card a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold; display: block; width: 100%; text-align: left; }
-        .tag { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .tag.online { background: #e50914; }
-        .tag.torrent { background: #248a3d; }
-
-        /* Контейнер для двух кнопок плеера */
-        .player-navigation {
-            display: flex;
-            gap: 12px;
-            margin-top: 30px;
-        }
-        .go-player-btn { 
-            flex: 1;
-            display: block; 
-            color: white; 
-            text-decoration: none; 
-            padding: 16px 10px; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            font-size: 16px; 
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            transition: background 0.2s, transform 0.1s;
-        }
-        .go-player-btn:active {
-            transform: scale(0.98);
-        }
-        /* Стиль для кнопки Торрент Кинотеатра */
-        .btn-cinema {
-            background: #e50914;
-            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
-        }
-        .btn-cinema:hover { background: #b80710; }
-        
-        /* Стиль для кнопки Онлайн ТВ */
-        .btn-tv {
-            background: #d4af37;
-            color: #000;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-        }
-        .btn-tv:hover { background: #bba036; }
-
-        /* Адаптивность для мобилок, чтобы кнопки вставали друг под друга, если экран совсем узкий */
-        @media (max-width: 400px) {
-            .player-navigation {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
+        .container { max-width: 600px; margin: 0 auto; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #e50914; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; color: white; }
+        .tv-btn { background: #e50914; }
     </style>
 </head>
 <body>
-
-    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
-
-    <div class="container">
-         <img src="logo.png" alt="Логотип" class="site-main-logo">
-       
-        <div class="search-box">
-            <input type="text" id="movieSearch" placeholder="Введите название фильма..." oninput="checkSearch()">
-            <div class="search-buttons" id="searchBtns">
-                <a href="#" id="goGoogle" onclick="playSound()" target="_blank" class="search-btn btn-google">В Google</a>
-                <a href="#" id="goRutor" onclick="playSound()" target="_blank" class="search-btn btn-torrent">На Rutor</a>
-            </div>
-        </div>
-
-        <div class="section-header">Смотреть онлайн</div>
-        <div class="link-card"><a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a><span class="tag online">Онлайн</span></div>
-
-        <div class="section-header">Скачать торрентом</div>
-        <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a><span class="tag torrent">Торрент</span></div>
-        <div class="link-card"><a href="https://nnmclub.to" onclick="playSound()" target="_blank">NNM-Club</a><span class="tag torrent">Торрент</span></div>
-        <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a><span class="tag torrent">Торрент</span></div>
-
-        <!-- Две раздельные кнопки на разные плееры -->
-        <div class="player-navigation">
-            <a href="player.html" class="go-player-btn btn-cinema" onclick="playSound()">🎬 Кинотеатр</a>
-            <a href="player2.html" class="go-player-btn btn-tv" onclick="playSound()">📺 Онлайн ТВ</a>
-        </div>
-    </div>
-
-    <script>
-        function playSound() { 
-            var audio = document.getElementById('clickSound');
-            audio.currentTime = 0;
-            audio.play().catch(function(e){}); 
-        }
-        
-        function checkSearch() {
-            var query = document.getElementById('movieSearch').value.trim();
-            var btns = document.getElementById('searchBtns');
-            if(query.length > 0) {
-                btns.style.display = 'flex';
-                document.getElementById('goGoogle').href = 'https://www.google.com/search?q=' + encodeURIComponent(query + ' смотреть онлайн');
-                document.getElementById('goRutor').href = 'https://rutor.info/search/1/0/000/2/' + encodeURIComponent(query);
-            } else { btns.style.display = 'none'; }
-        }
-    </script>
+<div class="container">
+    <h1>Добро пожаловать</h1>
+    <a href="player2.html" class="btn tv-btn">📺 Перейти в Плеер</a>
+</div>
 </body>
 </html>
