@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ХАЛЯВЩИК | Телевидение IPTV</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
@@ -31,29 +28,27 @@
         }
 
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .player-buttons { display: flex; justify-content: center; margin-bottom: 15px; }
         
-        .tv-quick-btn { 
-            background: #d4af37; 
-            color: #000; 
-            border: none; 
-            padding: 16px; 
+        /* Адаптивный фрейм для внешнего плеера */
+        .iframe-container {
+            position: relative;
             width: 100%;
-            border-radius: 8px; 
-            font-size: 18px;
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: 0.3s;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); 
+            padding-bottom: 56.25%; /* Соотношение сторон 16:9 */
+            height: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            border: 1px solid #444;
         }
-        .tv-quick-btn:hover { background: #eac65c; }
-        
-        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; display: none; }
-        #status { font-size: 15px; color: #00bcd4; margin: 15px 0; font-weight: bold; }
-        
-        .tv-channels-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 8px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
-        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 16px; font-weight: bold; }
-        .channel-btn:hover { background: #e50914; border-color: #e50914; }
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
         
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 20px; font-weight: bold; }
     </style>
@@ -64,125 +59,21 @@
     <img src="logo.png" alt="Логотип" class="site-main-logo">
     
     <div class="player-box">
-        <h1 id="tvTitle">Онлайн ТВ & IPTV</h1>
+        <h1>Онлайн ТВ & IPTV</h1>
         
-        <div class="player-buttons">
-            <button class="tv-quick-btn" onclick="loadIPTVPlaylist()">📺 Моё ТВ</button>
+        <!-- Встраиваем продвинутый плеер, который сам переварит и откроет плейлист -->
+        <div class="iframe-container">
+            <iframe 
+                src="https://www.webosapp.club/player/#http://sachamaster.pp.ua/2020/2020399.m3u8" 
+                allowfullscreen="true" 
+                webkitallowfullscreen="true" 
+                mozallowfullscreen="true">
+            </iframe>
         </div>
-        
-        <div id="status">Нажми кнопку выше, чтобы загрузить список каналов</div>
-        <div id="video-container"></div>
-        <div class="tv-channels-grid" id="channelsGrid"></div>
     </div>
 
     <a href="index.html" class="back-btn">← На главную</a>
 </div>
-
-<script>
-    var player = null;
-    var hlsInstance = null;
-    var playlistUrl = 'tv.m3u';
-
-    function loadIPTVPlaylist() {
-        const statusEl = document.getElementById('status');
-        const gridEl = document.getElementById('channelsGrid');
-        const videoCont = document.getElementById('video-container');
-
-        gridEl.innerHTML = ''; 
-        statusEl.innerText = 'Загрузка локального списка...';
-        videoCont.style.display = 'none';
-
-        if(hlsInstance) hlsInstance.destroy();
-
-        fetch(playlistUrl)
-            .then(response => {
-                if (!response.ok) throw new Error();
-                return response.text();
-            })
-            .then(data => {
-                parsePlaylist(data);
-            })
-            .catch(() => {
-                statusEl.innerText = 'Файл tv.m3u не найден на сервере.';
-            });
-    }
-
-    function parsePlaylist(data) {
-        const statusEl = document.getElementById('status');
-        const lines = data.split(/\r?\n/);
-        let channelCount = 0;
-
-        for (let i = 0; i < lines.length; i++) {
-            let line = lines[i].trim();
-            if (line.startsWith('#EXTINF:')) {
-                let urlLine = '';
-                for (let j = i + 1; j < lines.length; j++) {
-                    let nextLine = lines[j].trim();
-                    if (nextLine.startsWith('http')) {
-                        urlLine = nextLine;
-                        break;
-                    }
-                }
-                
-                if (urlLine) {
-                    let nameMatch = line.match(/,(.*)$/);
-                    let channelName = nameMatch ? nameMatch[1].trim() : 'Без названия';
-                    createChannelButton(channelName, urlLine);
-                    channelCount++;
-                }
-            }
-        }
-        
-        if (channelCount > 0) {
-            statusEl.innerText = `Плейлист успешно подключен!`;
-        } else {
-            statusEl.innerText = 'Ошибка чтения структуры tv.m3u.';
-        }
-    }
-
-    function createChannelButton(name, url) {
-        const gridEl = document.getElementById('channelsGrid');
-        const button = document.createElement('button');
-        button.className = 'channel-btn';
-        button.innerText = name;
-        button.onclick = () => {
-            playM3U8(url);
-        };
-        gridEl.appendChild(button);
-    }
-
-    function playM3U8(url) {
-        const container = document.getElementById('video-container');
-        container.innerHTML = '<video id="player" playsinline controls autocomplete="off"></video>';
-        container.style.display = 'block';
-        
-        const video = document.getElementById('player');
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = 'Запуск трансляции...';
-
-        if (Hls.isSupported()) {
-            if(hlsInstance) hlsInstance.destroy();
-            hlsInstance = new Hls();
-            hlsInstance.loadSource(url);
-            hlsInstance.attachMedia(video);
-            hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-                player = new Plyr(video);
-                video.play().catch(() => {});
-                statusEl.innerText = 'Эфир запущен!';
-            });
-            hlsInstance.on(Hls.Events.ERROR, function(event, data) {
-                if(data.fatal) {
-                    statusEl.innerText = 'Не удалось запустить поток.';
-                }
-            });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-            player = new Plyr(video);
-            video.play().catch(() => {});
-            statusEl.innerText = 'Эфир запущен!';
-        }
-    }
-</script>
 
 </body>
 </html>
