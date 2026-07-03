@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ХАЛЯВЩИК | Телевидение IPTV</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
@@ -36,13 +36,15 @@
         .tv-quick-btn { background: #d4af37; color: black; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; box-shadow: 0 15px 25px rgba(212, 175, 55, 0.4); }
         .tv-quick-btn:hover { background: #eac65c; }
         
-        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        #videoPlayer { width: 100%; display: block; aspect-ratio: 16/9; background: #000; }
         #status { font-size: 14px; color: #00bcd4; margin: 15px 0; font-weight: bold; }
         
         .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
         .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; text-align: left; }
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
         
+        /* Кнопка скачивания */
         .tv-external-btn {
             display: block;
             background: linear-gradient(135deg, #e50914, #b20710);
@@ -61,8 +63,6 @@
 
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 20px; font-weight: bold; }
         .back-btn:hover { color: #fff; }
-        
-        .plyr__controls { background: #e50914 !important; color: #fff !important; }
     </style>
 </head>
 <body>
@@ -80,10 +80,14 @@
         </div>
         
         <div id="status">Нажми кнопку выше, чтобы загрузить список каналов</div>
-        <div id="video-container"></div>
+        
+        <div id="video-container">
+            <video id="videoPlayer" playsinline controls></video>
+        </div>
+        
         <div class="tv-channels-grid" id="channelsGrid"></div>
 
-        <a href="tv.m3u" class="tv-external-btn">🚀 Скачать плейлист на телефон</a>
+        <a href="tv.m3u" download="tv.m3u" class="tv-external-btn" onclick="playSound()">🚀 Скачать плейлист на устройство</a>
     </div>
 
     <a href="index.html" class="back-btn" onclick="playSound()">← На главную</a>
@@ -98,30 +102,36 @@ function playSound() {
     }
 }
 
-var player;
+var player = null;
 var hlsInstance = null;
-var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
+
+// Инициализируем плеер Plyr один раз при старте страницы
+document.addEventListener('DOMContentLoaded', () => {
+    const video = document.getElementById('videoPlayer');
+    player = new Plyr(video, {
+        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen']
+    });
+});
 
 async function loadIPTVPlaylist(url) {
     playSound();
     const statusDiv = document.getElementById('status');
     const grid = document.getElementById('channelsGrid');
-    statusDiv.innerText = "Загрузка плейлиста...";
+    statusDiv.innerText = "Загрузка списка каналов...";
     grid.innerHTML = "";
     
     try {
-        // Загружаем файл напрямую из твоего репозитория, обходя заблокированный сайт
-        const response = await fetch(url);
+        const response = await fetch(url + '?t=' + new Date().getTime());
         if (!response.ok) throw new Error();
         const data = await response.text();
         const channels = parseM3U(data);
         
         if (channels.length === 0) {
-            statusDiv.innerText = "Файл плейлиста пуст или поврежден.";
+            statusDiv.innerText = "Плейлист пуст или имеет неверный формат.";
             return;
         }
         
-        statusDiv.innerText = `Успешно загружено каналов: ${channels.length}`;
+        statusDiv.innerText = `Доступно каналов: ${channels.length}`;
         
         channels.forEach(ch => {
             const btn = document.createElement('button');
@@ -131,11 +141,12 @@ async function loadIPTVPlaylist(url) {
             grid.appendChild(btn);
         });
         
+        // Автоматически запускаем самый первый канал из списка
         if (channels.length > 0) {
             playStream(channels[0].url, channels[0].name);
         }
     } catch (err) {
-        statusDiv.innerText = "Ошибка чтения локального файла tv.m3u.";
+        statusDiv.innerText = "Не удалось прочесть файл tv.m3u.";
     }
 }
 
@@ -160,28 +171,33 @@ function parseM3U(text) {
 function playStream(url, name) {
     playSound();
     document.getElementById('tvTitle').innerText = name;
-    const container = document.getElementById('video-container');
-    
-    if (player) { player.destroy(); player = null; }
-    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-    
-    container.innerHTML = `<video id="videoPlayer" playsinline controls style="width:100%; height:auto;"></video>`;
     const video = document.getElementById('videoPlayer');
+    const statusDiv = document.getElementById('status');
+
+    // Сбрасываем старый поток HLS, если он был активен
+    if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+    }
 
     if (Hls.isSupported()) {
-        hlsInstance = new Hls();
+        hlsInstance = new Hls({
+            maxMaxBufferLength: 10 // Ограничиваем буфер для стабильности стрима
+        });
         hlsInstance.loadSource(url);
         hlsInstance.attachMedia(video);
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-            player = new Plyr(video, plyrConfig);
             video.play().catch(function(){});
         });
         hlsInstance.on(Hls.Events.ERROR, function(event, data) {
-            if (data.fatal) { document.getElementById('status').innerText = "Не удалось запустить этот поток каналов."; }
+            if (data.fatal) {
+                statusDiv.innerText = "Ошибка трансляции потока. Возможно, ссылка временно не работает.";
+            }
         });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    } 
+    // Поддержка для Safari / iOS (iPhone), которые умеют m3u8 сами по себе
+    else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = url;
-        player = new Plyr(video, plyrConfig);
         video.addEventListener('loadedmetadata', function() {
             video.play().catch(function(){});
         });
