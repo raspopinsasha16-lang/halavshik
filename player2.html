@@ -5,109 +5,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ХАЛЯВЩИК | Телевидение IPTV</title>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)), url('bg.jpg') no-repeat center center; background-size: cover; color: #ffffff; margin: 0; padding: 20px 10px; text-align: center; min-height: 100vh; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
+            background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)), url('bg.jpg') no-repeat center center; 
+            background-size: cover; 
+            color: #ffffff; 
+            margin: 0; 
+            padding: 20px 10px; 
+            text-align: center; 
+            min-height: 100vh; 
+        }
         h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
         .container { max-width: 600px; margin: 0 auto; }
-        .site-main-logo { width: 140px; height: auto; margin: 10px auto 25px auto; display: block; border-radius: 20px; box-shadow: 0 5px 25px rgba(0, 0, 0, 0.6); transition: transform 0.3s ease; }
+        
+        /* Твой логотип-магнит */
+        .site-main-logo { 
+            width: 140px; 
+            height: auto; 
+            margin: 10px auto 25px auto; 
+            display: block; 
+            border-radius: 20px; 
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.3); 
+            transition: transform 0.3s ease; 
+        }
+        .site-main-logo:hover { transform: scale(1.05); }
+
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .player-box input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; }
         .player-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-        .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 2; }
-        .tv-quick-btn { background: #d4af37; color: #000; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; }
-        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; display: none; }
-        video { width: 100%; max-height: 360px; display: block; background: #000; }
-        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; word-wrap: break-word; }
-        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
-        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 2; transition: 0.3s; }
+        .main-play-btn:hover { background: #ff1f1f; }
+        .tv-quick-btn { background: #d4af37; color: #000; border: 1px solid #c4a030; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; transition: 0.3s; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+        .tv-quick-btn:hover { background: #eac65c; }
+        
+        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.7); display: none; }
+        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; }
+        
+        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: 0.2s; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
-        .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 20px; font-weight: bold; }
+        
+        .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; transition: 0.3s; }
+        .back-btn:hover { color: #fff; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <img src="logo.png" alt="Логотип" class="site-main-logo">
+    
     <div class="player-box">
         <h1 id="tvTitle">Онлайн ТВ & IPTV</h1>
-        <input type="text" id="streamUrl" value="http://sachamaster.pp.ua/2020/2020399.m3u8">
+        <input type="text" id="streamUrl" value="http://sachamaster.pp.ua/2020/2020399.m3u8" placeholder="Вставь ссылку на поток">
         <div class="player-buttons">
-            <button class="main-play-btn" onclick="playAction()">Включить</button>
+            <button class="main-play-btn" onclick="playAction()">Включить поток</button>
             <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
         </div>
-        <div id="status">Нажми «Моё ТВ», чтобы загрузить список каналов</div>
+        
+        <div id="status">Нажмите «Моё ТВ» для загрузки каналов</div>
         <div id="video-container"></div>
         <div class="tv-channels-grid" id="channelsGrid"></div>
     </div>
-    <a href="index.html" class="back-btn">← На главную</a>
+
+    <a href="index.html" class="back-btn">← На главную страницу</a>
 </div>
 
 <script>
-    // Прокси для чтения самого файла плейлиста
-    var menuProxy = 'https://api.allorigins.win/raw?url=';
+    var player = null;
+    var hlsInstance = null;
+    // Возвращаем старый добрый прокси cors.sh, с которым всё изначально работало
+    var menuProxy = 'https://proxy.cors.sh/';
 
-    function loadIPTVPlaylist(url) {
+    function loadIPTVPlaylist(playlistUrl) {
+        const proxyUrl = menuProxy + playlistUrl;
         const statusEl = document.getElementById('status');
-        statusEl.innerText = 'Загрузка списка каналов...';
-        
-        fetch(menuProxy + encodeURIComponent(url))
-        .then(r => {
-            if (!r.ok) throw new Error();
-            return r.text();
-        })
-        .then(data => {
-            const grid = document.getElementById('channelsGrid');
-            grid.innerHTML = '';
-            let count = 0;
-            
-            const lines = data.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith('#EXTINF:')) {
-                    let name = lines[i].split(',')[1] || 'Канал без названия';
-                    let urlLine = lines[i+1] ? lines[i+1].trim() : '';
-                    
-                    if (urlLine && urlLine.startsWith('http')) {
-                        let btn = document.createElement('button');
-                        btn.className = 'channel-btn';
-                        btn.innerText = name.trim();
-                        btn.onclick = () => { 
-                            document.getElementById('streamUrl').value = urlLine; 
-                            playAction(); 
-                        };
-                        grid.appendChild(btn);
-                        count++;
+        const gridEl = document.getElementById('channelsGrid');
+        const videoCont = document.getElementById('video-container');
+
+        gridEl.innerHTML = ''; 
+        statusEl.innerText = 'Загрузка списка ТВ...';
+        videoCont.style.display = 'none';
+
+        if(hlsInstance) hlsInstance.destroy();
+
+        fetch(proxyUrl)
+            .then(response => response.text())
+            .then(data => {
+                const lines = data.split('\n');
+                let channelCount = 0;
+
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith('#EXTINF:')) {
+                        let infoLine = lines[i];
+                        let urlLine = lines[i+1];
+                        
+                        if(urlLine && urlLine.trim().startsWith('http')) {
+                            let nameMatch = infoLine.match(/,(.*)$/);
+                            let channelName = nameMatch ? nameMatch[1].trim() : 'Без названия';
+                            createChannelButton(channelName, urlLine.trim());
+                            channelCount++;
+                        }
                     }
                 }
-            }
-            statusEl.innerText = `Успешно! Загружено каналов: ${count}. Выберите канал для теста.`;
-        })
-        .catch(() => {
-            statusEl.innerText = 'Ошибка чтения списка. Попробуй нажать кнопку повторно.';
-        });
+                
+                if(channelCount > 0) {
+                    statusEl.innerText = `Найдено ${channelCount} каналов. Выберите канал.`;
+                } else {
+                    statusEl.innerText = 'Каналы не найдены.';
+                }
+            })
+            .catch(error => {
+                statusEl.innerText = 'Ошибка загрузки. Попробуйте еще раз.';
+                console.error(error);
+            });
+    }
+
+    function createChannelButton(name, url) {
+        const gridEl = document.getElementById('channelsGrid');
+        const button = document.createElement('button');
+        button.className = 'channel-btn';
+        button.innerText = name;
+        button.onclick = () => {
+            document.getElementById('streamUrl').value = url;
+            playAction();
+        };
+        gridEl.appendChild(button);
     }
 
     function playAction() {
-        let url = document.getElementById('streamUrl').value.trim();
-        let statusEl = document.getElementById('status');
-        let cont = document.getElementById('video-container');
+        const input = document.getElementById('streamUrl').value.trim();
         
-        statusEl.innerText = 'Запуск трансляции...';
+        if (input.includes('.m3u8')) {
+            playM3U8(input);
+        } else if (input.startsWith('http')) {
+            loadIPTVPlaylist(input);
+        }
+    }
+
+    function playM3U8(url) {
+        const container = document.getElementById('video-container');
+        container.innerHTML = '<video id="player" playsinline controls></video>';
+        container.style.display = 'block';
         
-        // Используем стандартный HTML5 плеер, заменяя src напрямую (работает как родной плеер на Android)
-        cont.innerHTML = '<video id="tgPlayer" controls autoplay playsinline src="' + url + '"></video>';
-        cont.style.display = 'block';
-        
-        let video = document.getElementById('tgPlayer');
-        
-        video.onplaying = () => {
-            statusEl.innerText = 'Эфир запущен!';
-        };
-        
-        video.onerror = () => {
-            // Если напрямую не пошло, пробуем через альтернативный поток
-            statusEl.innerText = 'Поток обрабатывается. Подождите...';
-            video.src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-        };
+        const video = document.getElementById('player');
+        const statusEl = document.getElementById('status');
+
+        if (Hls.isSupported()) {
+            if(hlsInstance) hlsInstance.destroy();
+            hlsInstance = new Hls();
+            hlsInstance.loadSource(url);
+            hlsInstance.attachMedia(video);
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                player = new Plyr(video);
+                video.play();
+                statusEl.innerText = 'Воспроизведение...';
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            player = new Plyr(video);
+            video.play();
+            statusEl.innerText = 'Воспроизведение...';
+        }
     }
 </script>
+
 </body>
 </html>
