@@ -4,23 +4,38 @@
     <meta charset="UTF-8">
     <title>ХАЛЯВЩИК | Главная</title>
     <style>
-        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; }
-        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; text-decoration: none; font-weight: bold; color: #fff; }
+        body { 
+            font-family: sans-serif; 
+            background: linear-gradient(rgba(20, 20, 20, 0.78), rgba(20, 20, 20, 0.78)), url('bg.jpg');
+            background-size: cover; background-position: center; min-height: 100vh;
+            color: #ffffff; text-align: center; margin: 0; padding: 20px;
+        }
+        .container { max-width: 500px; margin: 0 auto; background: rgba(0,0,0,0.7); padding: 20px; border-radius: 16px; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; text-decoration: none; font-weight: bold; color: #fff; border: none; cursor: pointer; }
         .btn-tv { background: #d4af37; color: #000; }
         .btn-cinema { background: #e50914; }
-        .link-card { background: #222; padding: 12px; margin: 8px 0; border-radius: 8px; }
-        .link-card a { color: #fff; text-decoration: none; display: block; }
+        .link-card { background: rgba(34, 34, 34, 0.85); padding: 12px; margin: 8px 0; border-radius: 8px; }
+        .link-card a { color: #fff; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
+    <audio id="clickSound" src="click.mp3"></audio>
     <div class="container">
         <h1>ХАЛЯВЩИК</h1>
-        <div class="link-card"><a href="https://ru.huyamba.name" target="_blank">Huyamba</a></div>
-        <div class="link-card"><a href="https://rutracker.org" target="_blank">RuTracker</a></div>
-        <div class="link-card"><a href="https://rutor.info" target="_blank">Rutor</a></div>
-        <a href="player2.html" class="btn btn-tv">📺 Онлайн ТВ</a>
-        <a href="player.html" class="btn btn-cinema">🎬 Кинотеатр</a>
+        <div class="link-card"><a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a></div>
+        <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a></div>
+        <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a></div>
+        
+        <a href="player2.html" class="btn btn-tv" onclick="playSound()">📺 Онлайн ТВ</a>
+        <a href="player.html" class="btn btn-cinema" onclick="playSound()">🎬 Кинотеатр</a>
     </div>
+
+    <script>
+        function playSound() { 
+            var audio = document.getElementById('clickSound');
+            audio.currentTime = 0;
+            audio.play().catch(function(e){}); 
+        }
+    </script>
 </body>
 </html>
