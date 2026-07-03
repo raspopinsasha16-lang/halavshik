@@ -2,39 +2,40 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ТВ Плеер</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Плеер</title>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding: 20px; }
-        .box { max-width: 600px; margin: 0 auto; }
-        video { width: 100%; border: 2px solid #e50914; background: #000; }
-        .btn { display: block; width: 100%; padding: 15px; margin-top: 10px; background: #e50914; color: white; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
+        body { background: #000; color: #fff; text-align: center; }
+        .player-container { max-width: 600px; margin: 20px auto; }
+        #videoPlayer { width: 100%; }
+        .tv-quick-btn { background: #d4af37; padding: 15px; border: none; cursor: pointer; font-weight: bold; width: 100%; border-radius: 8px; }
     </style>
 </head>
 <body>
-<div class="box">
-    <video id="v" controls playsinline></video>
-    <button class="btn" onclick="playIt()">Запустить канал Саша Мастер</button>
+
+<div class="player-container">
+    <button class="tv-quick-btn" onclick="playStream('http://sachamaster.pp.ua/2020/2020399.m3u8', 'Канал Саша Мастер')">📺 Запустить ТВ</button>
+    <div id="video-container">
+        <video id="videoPlayer" playsinline controls></video>
+    </div>
 </div>
 
 <script>
-    function playIt() {
-        const v = document.getElementById('v');
-        // Используем прокси allorigins для надежного обхода блокировок
-        const targetUrl = 'http://sachamaster.pp.ua/2020/2020399.m3u8';
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
-        
-        if (Hls.isSupported()) {
-            const hls = new Hls();
-            hls.loadSource(proxyUrl);
-            hls.attachMedia(v);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                console.error("Ошибка HLS:", data);
-                alert("Ошибка воспроизведения. Проверь консоль (F12).");
-            });
-        }
+    const player = new Plyr('#videoPlayer');
+    
+    function playStream(url, name) {
+        const video = document.getElementById('videoPlayer');
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play();
+        });
     }
 </script>
+
 </body>
 </html>
