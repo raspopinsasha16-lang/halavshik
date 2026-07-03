@@ -3,43 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>ХАЛЯВЩИК | Плеер</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { 
-            margin: 0; padding: 20px; font-family: sans-serif; text-align: center; color: #fff;
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                        url('https://upload.wikimedia.org/wikipedia/commons/e/e0/Opel_Insignia_B_facelift_IAA_2019.jpg');
-            background-size: cover; background-position: center; min-height: 100vh;
-        }
-        .container { max-width: 600px; margin: 0 auto; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #e50914; }
-        video { width: 100%; margin-top: 15px; }
-        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .tv-btn { background: #e50914; color: white; }
-        .magnet-input { width: 100%; padding: 12px; margin-top: 10px; box-sizing: border-box; border-radius: 5px; border: 1px solid #444; background: #222; color: white; }
+        body { background: #000; color: #fff; text-align: center; padding: 20px; font-family: sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; }
+        video { width: 100%; border: 2px solid #e50914; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; background: #e50914; border: none; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>Плеер</h1>
-    <button class="btn tv-btn" onclick="loadChannels()">📺 Загрузить каналы</button>
-    <video id="videoPlayer" playsinline controls></video>
+    <button class="btn" onclick="loadChannels()">📺 Загрузить каналы</button>
+    <video id="v" playsinline controls></video>
     <div id="grid"></div>
-
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #555;">
-    
-    <h3>Магнитные ссылки</h3>
-    <input type="text" id="magnetLink" class="magnet-input" placeholder="Вставь magnet-ссылку...">
-    <button class="btn" style="background: #d4af37;" onclick="playMagnet()">Запустить торрент</button>
 </div>
-
 <script>
-    const video = document.getElementById('videoPlayer');
-    const player = new Plyr(video);
+    const video = document.getElementById('v');
     let hls = new Hls();
-
     function loadChannels() {
         fetch('tv.m3u?t=' + new Date().getTime())
             .then(r => r.text())
@@ -52,12 +32,12 @@
                         let name = lines[i].split(',')[1];
                         let url = lines[i+1].trim();
                         let btn = document.createElement('button');
-                        btn.className = 'btn tv-btn';
+                        btn.className = 'btn';
                         btn.innerText = name;
                         btn.onclick = () => {
                             hls.destroy();
                             hls = new Hls();
-                            hls.loadSource(url);
+                            hls.loadSource('https://corsproxy.io/?' + encodeURIComponent(url));
                             hls.attachMedia(video);
                             video.play();
                         };
@@ -66,12 +46,6 @@
                 }
             });
     }
-
-    function playMagnet() {
-        const link = document.getElementById('magnetLink').value;
-        if(link) window.open('https://webtorrent.io/webplayer/#' + encodeURIComponent(link), '_blank');
-    }
 </script>
-
 </body>
 </html>
