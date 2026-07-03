@@ -22,7 +22,6 @@
         h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
         .container { max-width: 600px; margin: 0 auto; }
         
-        /* Логотип-магнит */
         .site-main-logo { 
             width: 140px; 
             height: auto; 
@@ -33,16 +32,29 @@
         }
 
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .player-box input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; }
-        .player-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-        .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 2; }
-        .tv-quick-btn { background: #d4af37; color: #000; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+        .player-buttons { display: flex; justify-content: center; margin-bottom: 15px; }
+        
+        /* Кнопка Моё ТВ на всю ширину */
+        .tv-quick-btn { 
+            background: #d4af37; 
+            color: #000; 
+            border: none; 
+            padding: 16px; 
+            width: 100%;
+            border-radius: 8px; 
+            font-size: 18px;
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); 
+        }
+        .tv-quick-btn:hover { background: #eac65c; }
         
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; display: none; }
-        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; }
+        #status { font-size: 15px; color: #00bcd4; margin: 15px 0; font-weight: bold; }
         
-        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
-        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
+        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
         .channel-btn:hover { background: #e50914; border-color: #e50914; }
         
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 20px; font-weight: bold; }
@@ -51,18 +63,16 @@
 <body>
 
 <div class="container">
-    <!-- Твой фирменный магнит ХАЛЯВЩИК -->
     <img src="logo.png" alt="Логотип" class="site-main-logo">
     
     <div class="player-box">
         <h1 id="tvTitle">Онлайн ТВ & IPTV</h1>
-        <input type="text" id="streamUrl" value="http://sachamaster.pp.ua/2020/2020399.m3u8">
+        
         <div class="player-buttons">
-            <button class="main-play-btn" onclick="playAction()">Включить поток</button>
-            <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
+            <button class="tv-quick-btn" onclick="loadIPTVPlaylist()">📺 Моё ТВ</button>
         </div>
         
-        <div id="status">Нажми «Моё ТВ» для загрузки каналов</div>
+        <div id="status">Нажми кнопку выше, чтобы загрузить список каналов</div>
         <div id="video-container"></div>
         <div class="tv-channels-grid" id="channelsGrid"></div>
     </div>
@@ -73,52 +83,65 @@
 <script>
     var player = null;
     var hlsInstance = null;
-    
-    // Возвращаем тот самый прокси cors.sh, который стоял в твоей первой рабочей версии плеера
-    var menuProxy = 'https://proxy.cors.sh/';
+    // Твой неизменный адрес плейлиста
+    var playlistUrl = 'http://sachamaster.pp.ua/2020/2020399.m3u8';
 
-    function loadIPTVPlaylist(playlistUrl) {
-        const proxyUrl = menuProxy + playlistUrl;
+    function loadIPTVPlaylist() {
         const statusEl = document.getElementById('status');
         const gridEl = document.getElementById('channelsGrid');
         const videoCont = document.getElementById('video-container');
 
         gridEl.innerHTML = ''; 
-        statusEl.innerText = 'Загрузка списка ТВ...';
+        statusEl.innerText = 'Загрузка списка каналов напрямую...';
         videoCont.style.display = 'none';
 
         if(hlsInstance) hlsInstance.destroy();
 
-        fetch(proxyUrl)
-            .then(response => response.text())
-            .then(data => {
-                const lines = data.split('\n');
-                let channelCount = 0;
-
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].startsWith('#EXTINF:')) {
-                        let infoLine = lines[i];
-                        let urlLine = lines[i+1];
-                        
-                        if(urlLine && urlLine.trim().startsWith('http')) {
-                            let nameMatch = infoLine.match(/,(.*)$/);
-                            let channelName = nameMatch ? nameMatch[1].trim() : 'Без названия';
-                            createChannelButton(channelName, urlLine.trim());
-                            channelCount++;
-                        }
-                    }
-                }
-                
-                if(channelCount > 0) {
-                    statusEl.innerText = `Найдено ${channelCount} каналов. Выберите канал.`;
-                } else {
-                    statusEl.innerText = 'Каналы не найдены.';
-                }
+        // Пробуем загрузить напрямую без прокси
+        fetch(playlistUrl)
+            .then(response => {
+                if (!response.ok) throw new Error();
+                return response.text();
             })
-            .catch(error => {
-                statusEl.innerText = 'Ошибка загрузки. Попробуйте еще раз.';
-                console.error(error);
+            .then(data => {
+                parsePlaylist(data);
+            })
+            .catch(() => {
+                // Если напрямую не вышло из-за браузера, используем легкий резервный сборщик данных
+                statusEl.innerText = 'Прямое подключение не удалось. Пробуем резервный путь...';
+                fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(playlistUrl))
+                    .then(r => r.text())
+                    .then(data => parsePlaylist(data))
+                    .catch(() => {
+                        statusEl.innerText = 'Ошибка соединения. Пожалуйста, попробуйте еще раз.';
+                    });
             });
+    }
+
+    function parsePlaylist(data) {
+        const statusEl = document.getElementById('status');
+        const lines = data.split('\n');
+        let channelCount = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('#EXTINF:')) {
+                let infoLine = lines[i];
+                let urlLine = lines[i+1];
+                
+                if(urlLine && urlLine.trim().startsWith('http')) {
+                    let nameMatch = infoLine.match(/,(.*)$/);
+                    let channelName = nameMatch ? nameMatch[1].trim() : 'Без названия';
+                    createChannelButton(channelName, urlLine.trim());
+                    channelCount++;
+                }
+            }
+        }
+        
+        if(channelCount > 0) {
+            statusEl.innerText = `Успешно! Найдено каналов: ${channelCount}. Выберите канал.`;
+        } else {
+            statusEl.innerText = 'Список пуст или формат не распознан.';
+        }
     }
 
     function createChannelButton(name, url) {
@@ -127,29 +150,19 @@
         button.className = 'channel-btn';
         button.innerText = name;
         button.onclick = () => {
-            document.getElementById('streamUrl').value = url;
-            playAction();
+            playM3U8(url);
         };
         gridEl.appendChild(button);
     }
 
-    function playAction() {
-        const input = document.getElementById('streamUrl').value.trim();
-        
-        if (input.includes('.m3u8')) {
-            playM3U8(input);
-        } else if (input.startsWith('http')) {
-            loadIPTVPlaylist(input);
-        }
-    }
-
     function playM3U8(url) {
         const container = document.getElementById('video-container');
-        container.innerHTML = '<video id="player" playsinline controls></video>';
+        container.innerHTML = '<video id="player" playsinline controls autocomplete="off"></video>';
         container.style.display = 'block';
         
         const video = document.getElementById('player');
         const statusEl = document.getElementById('status');
+        statusEl.innerText = 'Запуск эфира...';
 
         if (Hls.isSupported()) {
             if(hlsInstance) hlsInstance.destroy();
@@ -158,14 +171,19 @@
             hlsInstance.attachMedia(video);
             hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
                 player = new Plyr(video);
-                video.play();
-                statusEl.innerText = 'Воспроизведение...';
+                video.play().catch(() => {});
+                statusEl.innerText = 'Трансляция запущена!';
+            });
+            hlsInstance.on(Hls.Events.ERROR, function(event, data) {
+                if(data.fatal) {
+                    statusEl.innerText = 'Ошибка воспроизведения. Попробуйте другой канал.';
+                }
             });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
             player = new Plyr(video);
-            video.play();
-            statusEl.innerText = 'Воспроизведение...';
+            video.play().catch(() => {});
+            statusEl.innerText = 'Трансляция запущена!';
         }
     }
 </script>
