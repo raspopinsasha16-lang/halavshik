@@ -3,33 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>ХАЛЯВЩИК | Плеер</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding: 20px; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
         .player-box { max-width: 600px; margin: 0 auto; background: #111; padding: 20px; border-radius: 15px; border: 2px solid #e50914; }
-        #videoPlayer { width: 100%; border-radius: 10px; }
-        .channel-btn { display: block; width: 100%; padding: 12px; margin: 5px 0; background: #222; color: #fff; border: 1px solid #444; border-radius: 5px; cursor: pointer; }
-        .channel-btn:hover { background: #e50914; }
+        #videoPlayer { width: 100%; border-radius: 10px; background: #000; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .btn { padding: 12px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #e50914; }
     </style>
 </head>
 <body>
-
 <div class="player-box">
-    <h1 id="tvTitle">Онлайн ТВ</h1>
-    <div id="video-container"><video id="videoPlayer" playsinline controls></video></div>
-    <div id="channelsGrid"></div>
+    <h1 id="tvTitle">Выбери канал</h1>
+    <video id="videoPlayer" playsinline controls></video>
+    <div id="channelsGrid" class="grid"></div>
 </div>
 
 <script>
-    const player = new Plyr('#videoPlayer');
     const video = document.getElementById('videoPlayer');
+    const player = new Plyr(video);
     let hls = null;
 
-    // Сразу при загрузке страницы читаем файл tv.m3u
+    // Загружаем список каналов из tv.m3u
     fetch('tv.m3u?t=' + new Date().getTime())
-        .then(res => res.text())
+        .then(r => r.text())
         .then(data => {
             const lines = data.split('\n');
             const grid = document.getElementById('channelsGrid');
@@ -38,23 +38,23 @@
                     let name = lines[i].split(',')[1];
                     let url = lines[i+1].trim();
                     let btn = document.createElement('button');
-                    btn.className = 'channel-btn';
+                    btn.className = 'btn';
                     btn.innerText = name;
-                    btn.onclick = () => playStream(url, name);
+                    btn.onclick = () => play(url, name);
                     grid.appendChild(btn);
                 }
             }
         });
 
-    function playStream(url, name) {
+    function play(url, name) {
         document.getElementById('tvTitle').innerText = name;
         if (hls) hls.destroy();
         
-        // КЛЮЧЕВОЙ МОМЕНТ: используем прокси для обхода блокировок
-        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+        // Используем прокси для обхода блокировок
+        const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
         
         hls = new Hls();
-        hls.loadSource(proxyUrl);
+        hls.loadSource(proxy);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
     }
