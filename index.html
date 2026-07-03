@@ -29,18 +29,17 @@
 </head>
 <body>
 
-    <audio id="clickSound" src="click.mp3"></audio>
+    <!-- Звуковой файл -->
+    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
 
     <div class="container">
         <img src="logo.png" alt="Логотип" class="site-logo">
         <h1>ХАЛЯВЩИК</h1>
         
-        <!-- Кнопки на сайты -->
         <div class="link-card"><a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a></div>
         <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a></div>
         <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a></div>
 
-        <!-- Плеерные кнопки -->
         <div class="button-group">
             <a href="player2.html" class="btn btn-tv" onclick="playSound()">📺 Онлайн ТВ</a>
             <a href="player.html" class="btn btn-cinema" onclick="playSound()">🎬 Кинотеатр</a>
@@ -50,8 +49,10 @@
     <script>
         function playSound() { 
             var audio = document.getElementById('clickSound');
-            audio.currentTime = 0;
-            audio.play().catch(function(e){}); 
+            audio.currentTime = 0; // Сбрасываем время, чтобы звук играл с начала при каждом клике
+            audio.play().catch(function(error) {
+                console.log("Звук заблокирован браузером: ", error);
+            }); 
         }
     </script>
 </body>
