@@ -5,10 +5,10 @@
     <title>ТВ Плеер</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; padding: 20px; font-family: sans-serif; }
+        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding: 20px; }
         .box { max-width: 600px; margin: 0 auto; }
         video { width: 100%; border: 2px solid #e50914; background: #000; }
-        .btn { display: block; width: 100%; padding: 15px; margin-top: 10px; background: #e50914; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .btn { display: block; width: 100%; padding: 15px; margin-top: 10px; background: #e50914; color: white; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -20,16 +20,19 @@
 <script>
     function playIt() {
         const v = document.getElementById('v');
-        const url = 'https://corsproxy.io/?http://sachamaster.pp.ua/2020/2020399.m3u8';
+        // Используем прокси allorigins для надежного обхода блокировок
+        const targetUrl = 'http://sachamaster.pp.ua/2020/2020399.m3u8';
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
         
         if (Hls.isSupported()) {
             const hls = new Hls();
-            hls.loadSource(url);
+            hls.loadSource(proxyUrl);
             hls.attachMedia(v);
             hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
-        } else {
-            v.src = url;
-            v.play();
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                console.error("Ошибка HLS:", data);
+                alert("Ошибка воспроизведения. Проверь консоль (F12).");
+            });
         }
     }
 </script>
