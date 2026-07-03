@@ -1,5 +1,3 @@
----
----
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -7,9 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ХАЛЯВЩИК | Телевидение IPTV</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)), url('bg.jpg') no-repeat center center; background-size: cover; color: #ffffff; margin: 0; padding: 20px 10px; text-align: center; min-height: 100vh; }
         h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
@@ -21,6 +16,7 @@
         .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 2; }
         .tv-quick-btn { background: #d4af37; color: #000; border: none; padding: 14px; margin: 10px 0; border-radius: 8px; font-weight: bold; cursor: pointer; flex-grow: 1; }
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; display: none; }
+        video { width: 100%; max-height: 360px; display: block; background: #000; }
         #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; word-wrap: break-word; }
         .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
         .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -44,20 +40,18 @@
     </div>
     <a href="index.html" class="back-btn">← На главную</a>
 </div>
+
 <script>
-    var hlsInstance = null;
-    var playerInstance = null;
-    
-    // Используем мощный прокси-сервер, маскирующий под приложение
-    var menuProxy = 'https://cors-anywhere.herokuapp.com/';
+    // Прокси для чтения самого файла плейлиста
+    var menuProxy = 'https://api.allorigins.win/raw?url=';
 
     function loadIPTVPlaylist(url) {
         const statusEl = document.getElementById('status');
-        statusEl.innerText = 'Загрузка плейлиста через защищенный канал...';
+        statusEl.innerText = 'Загрузка списка каналов...';
         
-        fetch(menuProxy + url)
+        fetch(menuProxy + encodeURIComponent(url))
         .then(r => {
-            if (!r.ok) throw new Error('Блокировка прокси');
+            if (!r.ok) throw new Error();
             return r.text();
         })
         .then(data => {
@@ -84,12 +78,10 @@
                     }
                 }
             }
-            statusEl.innerText = `Успешно! Загружено каналов: ${count}. Выберите канал.`;
+            statusEl.innerText = `Успешно! Загружено каналов: ${count}. Выберите канал для теста.`;
         })
-        .catch(err => {
-            // Если публичный cors-anywhere требует активации демо-доступа
-            statusEl.innerHTML = 'Для активации просмотра перейдите по ссылке <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:#d4af37;">cors-anywhere.herokuapp.com/corsdemo</a>, нажмите кнопку "Request temporary access" и обновите эту страницу.';
-            console.error(err);
+        .catch(() => {
+            statusEl.innerText = 'Ошибка чтения списка. Попробуй нажать кнопку повторно.';
         });
     }
 
@@ -98,35 +90,23 @@
         let statusEl = document.getElementById('status');
         let cont = document.getElementById('video-container');
         
-        statusEl.innerText = 'Подключение к телевещанию...';
-        cont.innerHTML = '<video id="player" playsinline controls autoplay></video>';
+        statusEl.innerText = 'Запуск трансляции...';
+        
+        // Используем стандартный HTML5 плеер, заменяя src напрямую (работает как родной плеер на Android)
+        cont.innerHTML = '<video id="tgPlayer" controls autoplay playsinline src="' + url + '"></video>';
         cont.style.display = 'block';
         
-        let video = document.getElementById('player');
+        let video = document.getElementById('tgPlayer');
         
-        if (Hls.isSupported()) {
-            if(hlsInstance) hlsInstance.destroy();
-            hlsInstance = new Hls();
-            
-            // Загружаем сам поток через прокси, чтобы обойти блокировку видеоплеером
-            hlsInstance.loadSource(menuProxy + url);
-            hlsInstance.attachMedia(video);
-            
-            hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                playerInstance = new Plyr(video);
-                statusEl.innerText = 'Трансляция запущена!';
-            });
-            
-            hlsInstance.on(Hls.Events.ERROR, function (event, data) {
-                if (data.fatal) {
-                    statusEl.innerText = 'Поток заблокирован сервером вещания.';
-                }
-            });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = menuProxy + url;
-            playerInstance = new Plyr(video);
-            statusEl.innerText = 'Воспроизведение...';
-        }
+        video.onplaying = () => {
+            statusEl.innerText = 'Эфир запущен!';
+        };
+        
+        video.onerror = () => {
+            // Если напрямую не пошло, пробуем через альтернативный поток
+            statusEl.innerText = 'Поток обрабатывается. Подождите...';
+            video.src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        };
     }
 </script>
 </body>
