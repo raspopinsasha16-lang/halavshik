@@ -2,62 +2,73 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ХАЛЯВЩИК | Плеер</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ХАЛЯВЩИК | Телевидение IPTV</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
-        .player-box { max-width: 600px; margin: 0 auto; background: #111; padding: 20px; border-radius: 15px; border: 2px solid #e50914; }
-        #videoPlayer { width: 100%; border-radius: 10px; background: #000; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .btn { padding: 12px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; cursor: pointer; }
-        .btn:hover { background: #e50914; }
+        body { font-family: sans-serif; background: #000; color: #fff; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .player-box { background: #111; border: 2px solid #e50914; padding: 20px; border-radius: 15px; }
+        .tv-quick-btn { background: #e50914; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 18px; }
+        #video-container { margin-top: 20px; border-radius: 10px; overflow: hidden; display: none; }
+        .channel-btn { display: block; background: #222; color: #fff; border: 1px solid #444; padding: 10px; margin-top: 5px; width: 100%; cursor: pointer; border-radius: 5px; }
+        .channel-btn:hover { background: #444; }
+        .back-btn { display: block; margin-top: 20px; color: #aaa; text-decoration: none; }
     </style>
 </head>
 <body>
-<div class="player-box">
-    <h1 id="tvTitle">Выбери канал</h1>
-    <video id="videoPlayer" playsinline controls></video>
-    <div id="channelsGrid" class="grid"></div>
+
+<div class="container">
+    <div class="player-box">
+        <h1>Онлайн ТВ</h1>
+        <button class="tv-quick-btn" onclick="loadIPTVPlaylist()">📺 Загрузить каналы</button>
+        <div id="video-container"><video id="player" playsinline controls></video></div>
+        <div id="channelsGrid"></div>
+    </div>
+    <a href="index.html" class="back-btn">← На главную</a>
 </div>
 
 <script>
-    const video = document.getElementById('videoPlayer');
-    const player = new Plyr(video);
-    let hls = null;
+    var player = new Plyr('#player');
+    var hls = new Hls();
 
-    // Загружаем список каналов из tv.m3u
-    fetch('tv.m3u?t=' + new Date().getTime())
-        .then(r => r.text())
-        .then(data => {
-            const lines = data.split('\n');
-            const grid = document.getElementById('channelsGrid');
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith('#EXTINF:')) {
-                    let name = lines[i].split(',')[1];
-                    let url = lines[i+1].trim();
-                    let btn = document.createElement('button');
-                    btn.className = 'btn';
-                    btn.innerText = name;
-                    btn.onclick = () => play(url, name);
-                    grid.appendChild(btn);
-                }
+    function loadIPTVPlaylist() {
+        // Используем твою рабочую ссылку через прокси allorigins
+        var playlistUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('http://sachamaster.pp.ua/2020/2020399.m3u8');
+        
+        fetch(playlistUrl)
+            .then(res => res.json())
+            .then(data => parseM3U(data.contents));
+    }
+
+    function parseM3U(data) {
+        const grid = document.getElementById('channelsGrid');
+        grid.innerHTML = '';
+        const lines = data.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('#EXTINF:')) {
+                let name = lines[i].split(',')[1];
+                let url = lines[i+1].trim();
+                let btn = document.createElement('button');
+                btn.className = 'channel-btn';
+                btn.innerText = name;
+                btn.onclick = () => playStream(url);
+                grid.appendChild(btn);
             }
-        });
+        }
+    }
 
-    function play(url, name) {
-        document.getElementById('tvTitle').innerText = name;
-        if (hls) hls.destroy();
-        
-        // Используем прокси для обхода блокировок
-        const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
-        
-        hls = new Hls();
-        hls.loadSource(proxy);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+    function playStream(url) {
+        document.getElementById('video-container').style.display = 'block';
+        hls.loadSource(url);
+        hls.attachMedia(document.getElementById('player'));
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            document.getElementById('player').play();
+        });
     }
 </script>
+
 </body>
 </html>
