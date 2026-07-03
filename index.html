@@ -2,59 +2,49 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ХАЛЯВЩИК | Главная</title>
+    <title>ХАЛЯВЩИК</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body {
-            font-family: -apple-system, sans-serif;
-            background: linear-gradient(rgba(20, 20, 20, 0.78), rgba(20, 20, 20, 0.78)), url('bg.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-            min-height: 100vh;
-        }
-        .container { max-width: 500px; margin: 0 auto; background: rgba(0, 0, 0, 0.9); padding: 25px; border-radius: 16px; border: 1px solid #444; }
-        .site-logo { width: 160px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; border-radius: 12px; }
-        h1 { color: #fff; margin-bottom: 20px; font-size: 24px; }
-        .link-card { background: #1a1a1a; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; }
-        .link-card a { color: #fff; text-decoration: none; font-weight: bold; display: block; }
-        
-        .button-group { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-        .btn { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; color: #fff; font-size: 16px; width: 100%; box-sizing: border-box; }
+        body { background: #111; color: #fff; text-align: center; padding: 20px; font-family: sans-serif; }
+        .container { max-width: 500px; margin: 0 auto; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #fff; text-decoration: none; }
         .btn-tv { background: #d4af37; color: #000; }
-        .btn-cinema { background: #e50914; }
+        video { width: 100%; margin-top: 15px; border: 2px solid #e50914; }
     </style>
 </head>
 <body>
-
-    <!-- Звуковой файл -->
-    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
-
     <div class="container">
-        <img src="logo.png" alt="Логотип" class="site-logo">
         <h1>ХАЛЯВЩИК</h1>
+        <a href="https://rutracker.org" class="btn" style="background:#333" target="_blank">RuTracker</a>
         
-        <div class="link-card"><a href="https://ru.huyamba.name" onclick="playSound()" target="_blank">Huyamba</a></div>
-        <div class="link-card"><a href="https://rutracker.org" onclick="playSound()" target="_blank">RuTracker</a></div>
-        <div class="link-card"><a href="https://rutor.info" onclick="playSound()" target="_blank">Rutor</a></div>
-
-        <div class="button-group">
-            <a href="player2.html" class="btn btn-tv" onclick="playSound()">📺 Онлайн ТВ</a>
-            <a href="player.html" class="btn btn-cinema" onclick="playSound()">🎬 Кинотеатр</a>
-        </div>
+        <button class="btn btn-tv" onclick="loadChannels()">📺 Загрузить ТВ</button>
+        <video id="v" controls></video>
+        <div id="grid"></div>
     </div>
 
     <script>
-        function playSound() { 
-            var audio = document.getElementById('clickSound');
-            audio.currentTime = 0; // Сбрасываем время, чтобы звук играл с начала при каждом клике
-            audio.play().catch(function(error) {
-                console.log("Звук заблокирован браузером: ", error);
-            }); 
+        const v = document.getElementById('v');
+        let hls = new Hls();
+        function loadChannels() {
+            fetch('tv.m3u').then(r => r.text()).then(data => {
+                const lines = data.split('\n');
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith('http')) {
+                        let btn = document.createElement('button');
+                        btn.className = 'btn btn-tv';
+                        btn.innerText = "Смотреть Саша Мастер";
+                        btn.onclick = () => {
+                            hls.destroy();
+                            hls = new Hls();
+                            hls.loadSource('https://corsproxy.io/?' + encodeURIComponent(lines[i].trim()));
+                            hls.attachMedia(v);
+                            v.play();
+                        };
+                        document.getElementById('grid').appendChild(btn);
+                    }
+                }
+            });
         }
     </script>
 </body>
 </html>
- 
