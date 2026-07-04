@@ -22,6 +22,30 @@
     <script>
         var client = new WebTorrent();
 
+       <!DOCTYPE html>
+<html>
+<head>
+    <title>Плеер 2 - Прямой запуск</title>
+    <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+</head>
+<body>
+    <nav style="margin-bottom: 20px; background: #eee; padding: 10px; border-radius: 5px; text-align: center;">
+        <a href="index.html">Главная</a> | 
+        <a href="player2.html">Плеер 2 (Прямой ввод)</a> | 
+        <a href="alternativa.html">Альтернатива (Гибрид)</a>
+    </nav>
+
+    <div style="text-align: center; margin: 20px;">
+        <input type="text" id="magnetLink" placeholder="Вставь магнит-ссылку сюда..." style="width: 70%; padding: 10px;">
+        <button onclick="startPlayback()" style="padding: 10px;">Смотреть</button>
+    </div>
+    
+    <div id="status" style="text-align: center; font-weight: bold; margin-bottom: 10px;"></div>
+    <div id="player" style="text-align: center;"></div>
+
+    <script>
+        var client = new WebTorrent();
+
         function startPlayback() {
             var magnet = document.getElementById('magnetLink').value;
             var status = document.getElementById('status');
@@ -43,6 +67,9 @@
                 });
             });
         }
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
