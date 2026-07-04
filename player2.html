@@ -1,86 +1,70 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Кинотеатр</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
-    <style>
-        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .player-box { max-width: 600px; margin: 0 auto; background: #222; padding: 20px; border-radius: 10px; }
-        .magnet-input { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; background: #e50914; border: none; color: #fff; font-weight: bold; }
-    </style>
+    <title>Плеер 2 - Поиск</title>
+    <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 </head>
 <body>
+
     <nav style="margin-bottom: 20px; background: #eee; padding: 10px; border-radius: 5px; text-align: center;">
         <a href="index.html">Главная</a> | 
         <a href="player2.html">Плеер 2 (API поиск)</a> | 
         <a href="alternativa.html">Альтернатива (Гибрид)</a>
     </nav>
 
-    <div id="player"></div>
-    ...
-</body>
-    <div class="player-box">
-        <h1>Кинотеатр</h1>
-        <div id="links-container">
-            <div class="link-row"><input type="text" class="magnet-input" placeholder="Ссылка №1"></div>
-        </div>
-        <button onclick="addLinkField()">➕ Добавить еще ссылку</button>
-        <button onclick="playMagnet()">🎬 Запустить поиск</button>
-        <div id="status">Вставь ссылки</div>
-        <video id="player" playsinline controls style="width:100%"></video>
+    <div style="margin: 20px 0; text-align: center;">
+        <input type="text" id="movieSearch" placeholder="Введите название (на англ.)..." style="padding: 10px; width: 300px;">
+        <button onclick="searchAndPlay()" style="padding: 10px;">Найти и смотреть</button>
     </div>
+    
+    <div id="status" style="text-align: center; font-weight: bold; margin-bottom: 10px;"></div>
+    
+    <div id="player" style="text-align: center;"></div>
 
     <script>
         var client = new WebTorrent();
-        var player = new Plyr('#player');
 
-        function addLinkField() {
-            var container = document.getElementById('links-container');
-            var count = container.getElementsByClassName('link-row').length + 1;
-            var div = document.createElement('div');
-            div.className = 'link-row';
-            div.innerHTML = '<input type="text" class="magnet-input" placeholder="Ссылка №' + count + '">';
-            container.appendChild(div);
+        function searchAndPlay() {
+            var query = document.getElementById('movieSearch').value;
+            var status = document.getElementById('status');
+            
+            if (!query) { status.innerHTML = '⚠️ Введите название!'; return; }
+            status.innerHTML = '🔍 Ищу фильм в базе...';
+
+            fetch('https://yts.mx/api/v2/list_movies.json?query_term=' + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.data.movies) {
+                        status.innerHTML = '❌ Фильм не найден.';
+                        return;
+                    }
+                    
+                    var movie = data.data.movies[0];
+                    var torrent = movie.torrents[0];
+                    var magnet = 'magnet:?xt=urn:btih:' + torrent.hash + '&dn=' + encodeURIComponent(movie.title) + '&tr=wss%3A%2F%2Ftracker.openwebtorrent.com';
+                    
+                    status.innerHTML = '✅ Нашел: ' + movie.title + '. Запускаю...';
+                    startPlayback(magnet);
+                })
+                .catch(err => {
+                    status.innerHTML = '❌ Ошибка поиска: ' + err;
+                });
         }
 
-        function playMagnet() {
-    var inputs = document.getElementsByClassName('magnet-input');
-    var status = document.getElementById('status');
-    
-    client.torrents.forEach(function(t) {
-        client.remove(t);
-    });
-
-    var links = [];
-    for (var i = 0; i < inputs.length; i++) {
-        if (inputs[i].value.trim() !== "") links.push(inputs[i].value.trim());
-    }
-
-    if (links.length === 0) { status.innerHTML = '⚠️ Вставь ссылки!'; return; }
-
-    var found = false;
-    links.forEach(function(url, index) {
-        setTimeout(function() {
-            if (found) return;
-            status.innerHTML = '🔍 Поиск (ссылка №' + (index + 1) + ')...';
-            
-            client.add(url, { announce: [] }, function (torrent) {
-                torrent.on('ready', function () {
+        function startPlayback(magnet) {
+            client.torrents.forEach(t => client.remove(t));
+            client.add(magnet, { announce: ['wss://tracker.openwebtorrent.com'] }, torrent => {
+                torrent.on('ready', () => {
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    if (file && !found) {
-                        found = true;
-                        status.innerHTML = '✅ Воспроизведение!';
+                    if (file) {
+                        document.getElementById('status').innerHTML = '🎬 Воспроизведение!';
                         file.renderTo('#player', { autoplay: true });
+                    } else {
+                        document.getElementById('status').innerHTML = '❌ Видеофайл не найден.';
                     }
                 });
             });
-        }, index * 2000); // Сократил интервал, чтобы быстрее проверять
-    });
-}
+        }
     </script>
 </body>
 </html>
