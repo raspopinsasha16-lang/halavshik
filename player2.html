@@ -83,37 +83,37 @@
         var client = new WebTorrent();
         var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
 
-       function playMagnet() {
+      function playMagnet() {
     playSound();
-    var link = document.getElementById('magnetLink').value.trim();
+    // Разделяем введенный текст по строкам или запятым
+    var rawInput = document.getElementById('magnetLink').value.trim();
+    var links = rawInput.split(/\n|,/).map(l => l.trim()).filter(l => l.length > 0);
     var status = document.getElementById('status');
 
-    if (!link) {
-        status.innerHTML = '⚠️ Пожалуйста, вставь ссылку!';
+    if (links.length === 0) {
+        status.innerHTML = '⚠️ Пожалуйста, вставь хотя бы одну ссылку!';
         return;
     }
 
-    // Если это прямая ссылка
-    if (link.startsWith('http')) {
-        status.innerHTML = '🚀 Загрузка видео...';
-        document.getElementById('player').src = link;
-        document.getElementById('player').play();
-    } 
-    // Если это магнит-ссылка
-    else {
-        status.innerHTML = '⚡ Подключение к пирам...';
+    status.innerHTML = '🔍 Поиск рабочей ссылки из ' + links.length + '...';
+    
+    // Запускаем проверку каждой ссылки
+    var found = false;
+    links.forEach(function(link) {
+        if (found) return; // Если уже нашли, дальше не ищем
+
         client.add(link, function (torrent) {
-            var file = torrent.files.find(function (f) {
-                return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
-            });
-            if (file) {
-                status.innerHTML = '✅ Буферизация: ' + file.name;
+            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+            
+            if (file && !found) {
+                found = true;
+                status.innerHTML = '✅ Найдено: ' + torrent.name;
                 file.renderTo('#player', { autoplay: true });
-            } else {
-                status.innerHTML = '❌ Видео не найдено в раздаче.';
+                // Очищаем другие торренты, чтобы не грузили сеть
+                client.torrents.forEach(t => { if (t !== torrent) client.remove(t); });
             }
         });
-    }
+    });
 }
         // Если это магнит-ссылка (как было раньше)
         else if (link.startsWith('magnet:')) {
