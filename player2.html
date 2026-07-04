@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Плеер - Тот самый рабочий</title>
+    <title>Плеер - С поддержкой Magnet</title>
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 </head>
 <body>
+
     <div style="text-align: center; margin: 20px;">
-        <input type="text" id="magnetLink" placeholder="Вставь magnet-ссылку..." style="width: 80%; padding: 10px;">
+        <input type="text" id="magnetLink" placeholder="Вставь magnet:?xt=..." style="width: 80%; padding: 10px;">
         <button onclick="playMagnet()" style="padding: 10px;">Смотреть</button>
     </div>
+
     <div id="status" style="text-align: center; font-weight: bold; margin: 10px;"></div>
     <div id="player" style="text-align: center;"></div>
 
@@ -16,26 +18,36 @@
         var client = new WebTorrent();
 
         function playMagnet() {
-            var magnet = document.getElementById('magnetLink').value.trim();
+            var input = document.getElementById('magnetLink').value.trim();
             var status = document.getElementById('status');
             var playerDiv = document.getElementById('player');
-            
-            // Очищаем предыдущий плеер
-            playerDiv.innerHTML = '';
-            status.innerHTML = '🚀 Загрузка метаданных...';
 
-            client.torrents.forEach(t => client.destroy());
+            // Очистка перед новым запуском
+            playerDiv.innerHTML = '';
+            status.innerHTML = '🚀 Подключение...';
+
+            // Находим magnet-ссылку в строке
+            var magnet = input.substring(input.indexOf("magnet:"));
+
+            if (!magnet.startsWith("magnet:")) {
+                status.innerHTML = '❌ Ошибка: Вставь правильную magnet-ссылку!';
+                return;
+            }
+
+            client.torrents.forEach(t => t.destroy());
 
             client.add(magnet, function (torrent) {
                 torrent.on('ready', function () {
                     status.innerHTML = '✅ Торрент готов!';
+                    
                     // Ищем видеофайл
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                    
                     if (file) {
-                        // То самое действие, которое работало всегда
+                        // Тот самый базовый запуск
                         file.renderTo('#player', { autoplay: true });
                     } else {
-                        status.innerHTML = '❌ Файл не найден';
+                        status.innerHTML = '❌ Видеофайл не найден.';
                     }
                 });
             });
