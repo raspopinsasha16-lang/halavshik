@@ -39,34 +39,40 @@
         }
 
         function playMagnet() {
-            var inputs = document.getElementsByClassName('magnet-input');
-            var status = document.getElementById('status');
-            var links = [];
-            for (var i = 0; i < inputs.length; i++) {
-                if (inputs[i].value.trim() !== "") links.push(inputs[i].value.trim());
-            }
+    var inputs = document.getElementsByClassName('magnet-input');
+    var status = document.getElementById('status');
+    
+    // 1. Очищаем все предыдущие торренты, чтобы не было ошибок "duplicate"
+    client.torrents.forEach(function(t) {
+        client.remove(t);
+    });
 
-            if (links.length === 0) { status.innerHTML = '⚠️ Вставь ссылки!'; return; }
+    var links = [];
+    for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value.trim() !== "") links.push(inputs[i].value.trim());
+    }
 
-            var found = false;
-            links.forEach(function(url, index) {
-                setTimeout(function() {
-                    if (found) return;
-                    status.innerHTML = '🔍 Проверка ссылки №' + (index + 1) + '...';
-                    
-                    client.add(url, { announce: [] }, function (torrent) {
-                        torrent.on('ready', function () {
-                            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                            if (file && !found) {
-                                found = true;
-                                status.innerHTML = '✅ Найдено!';
-                                file.renderTo('#player', { autoplay: true });
-                            }
-                        });
-                    });
-                }, index * 6000);
+    if (links.length === 0) { status.innerHTML = '⚠️ Вставь ссылки!'; return; }
+
+    var found = false;
+    links.forEach(function(url, index) {
+        setTimeout(function() {
+            if (found) return;
+            status.innerHTML = '🔍 Поиск (ссылка №' + (index + 1) + ')...';
+            
+            client.add(url, { announce: [] }, function (torrent) {
+                torrent.on('ready', function () {
+                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                    if (file && !found) {
+                        found = true;
+                        status.innerHTML = '✅ Воспроизведение!';
+                        file.renderTo('#player', { autoplay: true });
+                    }
+                });
             });
-        }
+        }, index * 2000); // Сократил интервал, чтобы быстрее проверять
+    });
+}
     </script>
 </body>
 </html>
