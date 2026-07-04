@@ -6,63 +6,68 @@
 </head>
 <body>
     <div style="text-align: center; margin: 20px;">
-        <input type="text" id="magnetLink" placeholder="Вставь сюда только magnet:?xt=..." style="width: 80%; padding: 10px;">
+        <input type="text" id="magnetLink" placeholder="Вставь ссылку..." style="width: 80%; padding: 10px;">
         <button onclick="playMagnet()" style="padding: 10px;">Смотреть</button>
     </div>
     <div id="status" style="text-align: center; font-weight: bold; margin: 10px;"></div>
     <div id="player" style="text-align: center;"></div>
 
     <script>
-        // В самом верху скрипта, перед всеми функциями
-var client = new WebTorrent();
+        var client = new WebTorrent();
 
-function playChannel(magnet) {
-    var status = document.getElementById('status');
-    var playerDiv = document.getElementById('player');
-    
-    status.innerHTML = '🚀 Подключаюсь...';
-
-    // ОЧЕНЬ ВАЖНО: принудительно очищаем всё старое
-    if (client.torrents.length > 0) {
-        client.torrents.forEach(t => client.destroy()); 
-        // Если destroy не помогает, создаем новый клиент
-        client = new WebTorrent();
-    }
-
-    client.add(magnet, { 
-        announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
-    }, function (torrent) {
-        // Убираем ожидание готовности, если оно «зависает»
-        torrent.on('metadata', function () {
-            status.innerHTML = '⚡ Метаданные получены!';
-        });
-
-        torrent.on('ready', function () {
-            status.innerHTML = '✅ Готово!';
-            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-            
-            if (file) {
-                var btn = document.createElement("button");
-                btn.innerHTML = "▶ СМОТРЕТЬ";
-                btn.style.width = "100%";
-                btn.style.padding = "20px";
-                btn.onclick = function() {
-                    file.getBlobURL(function (err, url) {
-                        var video = document.createElement('video');
-                        video.src = url;
-                        video.controls = true;
-                        video.autoplay = true;
-                        video.style.width = '100%';
-                        playerDiv.innerHTML = '';
-                        playerDiv.appendChild(video);
-                    });
-                    btn.style.display = 'none';
-                };
-                playerDiv.appendChild(btn);
+        function playMagnet() {
+            var input = document.getElementById('magnetLink').value.trim();
+            var magnet = input.substring(input.indexOf("magnet:"));
+            if (magnet.startsWith("magnet:")) {
+                playChannel(magnet);
             }
-        });
-    });
-}
+        }
+
+        function playChannel(magnet) {
+            var status = document.getElementById('status');
+            var playerDiv = document.getElementById('player');
+            status.innerHTML = '🚀 Подключаюсь...';
+
+            // Очистка
+            if (client.torrents.length > 0) {
+                client.torrents.forEach(t => t.destroy());
+            }
+
+            client.add(magnet, { 
+                announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
+            }, function (torrent) {
+                torrent.on('metadata', function () {
+                    status.innerHTML = '⚡ Метаданные получены!';
+                });
+
+                torrent.on('ready', function () {
+                    status.innerHTML = '✅ Готово!';
+                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                    
+                    if (file) {
+                        var btn = document.createElement("button");
+                        btn.innerHTML = "▶ СМОТРЕТЬ";
+                        btn.style.width = "100%";
+                        btn.style.padding = "20px";
+                        btn.style.marginTop = "10px";
+                        
+                        btn.onclick = function() {
+                            file.getBlobURL(function (err, url) {
+                                if (err) return;
+                                var video = document.createElement('video');
+                                video.src = url;
+                                video.controls = true;
+                                video.autoplay = true;
+                                video.style.width = '100%';
+                                playerDiv.innerHTML = '';
+                                playerDiv.appendChild(video);
+                            });
+                            btn.style.display = 'none';
+                        };
+                        playerDiv.appendChild(btn);
+                    }
+                });
+            });
         }
     </script>
 </body>
