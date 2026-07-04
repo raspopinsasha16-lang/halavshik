@@ -1,1 +1,140 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Халявщик | Кинотеатр (Magnet)</title>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)), url('bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px 10px;
+            text-align: center;
+            min-height: 100vh;
+        }
+        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        /* Поле для ввода Magnet-ссылки */
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #e50914;
+            background: #000;
+            color: #fff;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 15px;
+        }
+        
+        .main-play-btn { background: #e50914; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        
+        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; min-height: 20px; }
+
+        .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; }
+        .back-btn:hover { color: #fff; }
+
+        .plyr__controls [data-plyr="play"] { background: #e50914 !important; color: #fff !important; }
+    </style>
+</head>
+<body>
+
+    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+
+    <div class="container">
+        <h1>🎬 Кинотеатр (Magnet)</h1>
+
+        <div class="player-box">
+            <input type="text" id="magnetLink" placeholder="Вставь Magnet-ссылку 🧲">
+            <button class="main-play-btn" onclick="playMagnet()">Запустить фильм</button>
+            <div id="status">Вставь ссылку и нажми кнопку запуска</div>
+            
+            <div id="video-container">
+                <video id="player" playsinline controls></video>
+            </div>
+        </div>
+
+        <a href="index.html" class="back-btn" onclick="playSound()">← На главную страницу</a>
+    </div>
+
+    <script>
+        function playSound() { 
+            var audio = document.getElementById('clickSound');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(function(e){}); 
+            }
+        }
+
+        // Инициализируем торрент-клиент и плеер
+        var client = new WebTorrent();
+        var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
+
+        function playMagnet() {
+            playSound();
+            var link = document.getElementById('magnetLink').value.trim();
+            var status = document.getElementById('status');
+            
+            if (!link) {
+                status.innerHTML = '⚠️ Пожалуйста, вставь ссылку!';
+                status.style.color = '#e50914';
+                return;
+            }
+
+            if (!link.startsWith('magnet:')) {
+                status.innerHTML = '⚠️ Ссылка должна начинаться с "magnet:"';
+                status.style.color = '#e50914';
+                return;
+            }
+
+            status.innerHTML = '⚡ Подключение к пирам... Это может занять немного времени.';
+            status.style.color = '#00bcd4';
+
+            // Если торрент с таким инфо-хэшем уже качается, удаляем его, чтобы запустить новый
+            client.add(link, function (torrent) {
+                // Ищем файл с видео (mp4, webm, mkv)
+                var file = torrent.files.find(function (f) {
+                    return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
+                });
+
+                if (!file) {
+                    status.innerHTML = '❌ В этой раздаче не найдено поддерживаемых видеофайлов.';
+                    status.style.color = '#e50914';
+                    return;
+                }
+
+                status.innerHTML = '🎬 Буферизация: ' + file.name + ' (Размер: ' + (file.length / 1024 / 1024).toFixed(2) + ' MB)';
+                
+                // Направляем поток из торрента прямо в наш тег <video>
+                file.renderTo('video#player', { autoplay: true }, function(err, elem) {
+                    if (err) {
+                        status.innerHTML = '❌ Ошибка при попытке воспроизвести видео.';
+                        status.style.color = '#e50914';
+                        return;
+                    }
+                    status.innerHTML = '▶️ Воспроизведение: ' + file.name;
+                });
+            });
+
+            // Обработка ошибок самого WebTorrent
+            client.on('error', function (err) {
+                status.innerHTML = '❌ Ошибка клиента: ' + err.message;
+                status.style.color = '#e50914';
+            });
+        }
+    </script>
+</body>
+</html>
