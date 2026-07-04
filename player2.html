@@ -2,124 +2,71 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Халявщик | Кинотеатр (Magnet)</title>
+    <title>Кинотеатр</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
-    
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)), url('bg.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px 10px;
-            text-align: center;
-            min-height: 100vh;
-        }
-        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        
-        .magnet-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border: 1px solid #e50914;
-            background: #000;
-            color: #fff;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        
-        .main-play-btn { background: #e50914; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
-        .add-btn { background: #444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 15px; }
-        
-        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
-        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; min-height: 20px; }
-
-        .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; }
-        .back-btn:hover { color: #fff; }
+        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .player-box { max-width: 600px; margin: 0 auto; background: #222; padding: 20px; border-radius: 10px; }
+        .magnet-input { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; background: #e50914; border: none; color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
-
-    <div class="container">
-        <h1>🎬 Кинотеатр (Magnet)</h1>
-
-        <div class="player-box">
-            <div id="links-container">
-                <div class="link-row">
-                    <input type="text" class="magnet-input" placeholder="Ссылка №1">
-                </div>
-            </div>
-            
-            <button class="add-btn" onclick="addLinkField()">➕ Добавить еще ссылку</button>
-            <button class="main-play-btn" onclick="playMagnet()">🎬 Запустить поиск</button>
-            <div id="status">Вставь ссылки и нажми кнопку запуска</div>
-            
-            <div id="video-container">
-                <video id="player" playsinline controls></video>
-            </div>
+    <div class="player-box">
+        <h1>Кинотеатр</h1>
+        <div id="links-container">
+            <div class="link-row"><input type="text" class="magnet-input" placeholder="Ссылка №1"></div>
         </div>
-
-        <a href="index.html" class="back-btn" onclick="playSound()">← На главную страницу</a>
+        <button onclick="addLinkField()">➕ Добавить еще ссылку</button>
+        <button onclick="playMagnet()">🎬 Запустить поиск</button>
+        <div id="status">Вставь ссылки</div>
+        <video id="player" playsinline controls style="width:100%"></video>
     </div>
 
     <script>
-        function playSound() { 
-            var audio = document.getElementById('clickSound');
-            if (audio) { audio.currentTime = 0; audio.play().catch(function(e){}); }
-        }
+        var client = new WebTorrent();
+        var player = new Plyr('#player');
 
-        // Инициализируем клиент с чистыми трекерами
-        
-var client = new WebTorrent();
+        function addLinkField() {
+            var container = document.getElementById('links-container');
+            var count = container.getElementsByClassName('link-row').length + 1;
+            var div = document.createElement('div');
             div.className = 'link-row';
             div.innerHTML = '<input type="text" class="magnet-input" placeholder="Ссылка №' + count + '">';
             container.appendChild(div);
         }
 
-       function playMagnet() {
-    playSound();
-    var inputs = document.getElementsByClassName('magnet-input');
-    var status = document.getElementById('status');
-    var links = [];
-    
-    for (var i = 0; i < inputs.length; i++) {
-        if (inputs[i].value.trim() !== "") links.push({url: inputs[i].value.trim(), id: i + 1});
-    }
+        function playMagnet() {
+            var inputs = document.getElementsByClassName('magnet-input');
+            var status = document.getElementById('status');
+            var links = [];
+            for (var i = 0; i < inputs.length; i++) {
+                if (inputs[i].value.trim() !== "") links.push(inputs[i].value.trim());
+            }
 
-    if (links.length === 0) {
-        status.innerHTML = '⚠️ Вставь ссылку!';
-        return;
-    }
+            if (links.length === 0) { status.innerHTML = '⚠️ Вставь ссылки!'; return; }
 
-    var found = false;
-    links.forEach(function(item, index) {
-        setTimeout(function() {
-            if (found) return;
-            status.innerHTML = '🔍 Поиск (ссылка №' + item.id + ')...';
-
-            // Пустой announce: [] отключает попытки подключения к трекерам
-            client.add(item.url, { announce: [] }, function (torrent) {
-                torrent.on('ready', function () {
-                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    if (file && !found) {
-                        found = true;
-                        status.innerHTML = '✅ Воспроизведение: ' + torrent.name.substring(0, 15);
-                        file.renderTo('#player', { autoplay: true });
-                    }
-                });
+            var found = false;
+            links.forEach(function(url, index) {
+                setTimeout(function() {
+                    if (found) return;
+                    status.innerHTML = '🔍 Проверка ссылки №' + (index + 1) + '...';
+                    
+                    client.add(url, { announce: [] }, function (torrent) {
+                        torrent.on('ready', function () {
+                            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                            if (file && !found) {
+                                found = true;
+                                status.innerHTML = '✅ Найдено!';
+                                file.renderTo('#player', { autoplay: true });
+                            }
+                        });
+                    });
+                }, index * 6000);
             });
-        }, index * 5000); // 5 секунд между попытками
-    });
-}
+        }
     </script>
 </body>
 </html>
