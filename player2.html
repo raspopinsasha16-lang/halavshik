@@ -23,23 +23,28 @@
 
     <script>
         var client = new WebTorrent();
-
+        
         function searchAndPlay() {
             var query = document.getElementById('movieSearch').value;
             var status = document.getElementById('status');
             
             if (!query) { status.innerHTML = '⚠️ Введите название!'; return; }
-            status.innerHTML = '🔍 Ищу фильм в базе...';
+            status.innerHTML = '🔍 Ищу через прокси-шлюз...';
 
-            fetch('https://yts.mx/api/v2/list_movies.json?query_term=' + encodeURIComponent(query))
+            // Используем шлюз allorigins, чтобы обойти блокировку CORS
+            var apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://yts.mx/api/v2/list_movies.json?query_term=' + query);
+
+            fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
-                    if (!data.data.movies) {
+                    var parsed = JSON.parse(data.contents);
+                    
+                    if (!parsed.data.movies) {
                         status.innerHTML = '❌ Фильм не найден.';
                         return;
                     }
                     
-                    var movie = data.data.movies[0];
+                    var movie = parsed.data.movies[0];
                     var torrent = movie.torrents[0];
                     var magnet = 'magnet:?xt=urn:btih:' + torrent.hash + '&dn=' + encodeURIComponent(movie.title) + '&tr=wss%3A%2F%2Ftracker.openwebtorrent.com';
                     
@@ -47,7 +52,8 @@
                     startPlayback(magnet);
                 })
                 .catch(err => {
-                    status.innerHTML = '❌ Ошибка поиска: ' + err;
+                    status.innerHTML = '❌ Ошибка сети: ' + err.message;
+                    console.error('Детали ошибки:', err);
                 });
         }
 
@@ -62,6 +68,9 @@
                     } else {
                         document.getElementById('status').innerHTML = '❌ Видеофайл не найден.';
                     }
+                });
+                torrent.on('error', (err) => {
+                    document.getElementById('status').innerHTML = '❌ Ошибка торрента: ' + err.message;
                 });
             });
         }
