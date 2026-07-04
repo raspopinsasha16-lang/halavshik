@@ -1,1 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кинотеатр</title>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <style>
+        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .player-box { max-width: 600px; margin: 0 auto; background: #222; padding: 20px; border-radius: 10px; }
+        .magnet-input { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; background: #e50914; border: none; color: #fff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="player-box">
+        <h1>Кинотеатр</h1>
+        <div id="links-container">
+            <div class="link-row"><input type="text" class="magnet-input" placeholder="Ссылка №1"></div>
+        </div>
+        <button onclick="addLinkField()">➕ Добавить еще ссылку</button>
+        <button onclick="playMagnet()">🎬 Запустить поиск</button>
+        <div id="status">Вставь ссылки</div>
+        <video id="player" playsinline controls style="width:100%"></video>
+    </div>
 
+    <script>
+        var client = new WebTorrent();
+        var player = new Plyr('#player');
+
+        function addLinkField() {
+            var container = document.getElementById('links-container');
+            var count = container.getElementsByClassName('link-row').length + 1;
+            var div = document.createElement('div');
+            div.className = 'link-row';
+            div.innerHTML = '<input type="text" class="magnet-input" placeholder="Ссылка №' + count + '">';
+            container.appendChild(div);
+        }
+
+        function playMagnet() {
+    var inputs = document.getElementsByClassName('magnet-input');
+    var status = document.getElementById('status');
+    
+    client.torrents.forEach(function(t) {
+        client.remove(t);
+    });
+
+    var links = [];
+    for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value.trim() !== "") links.push(inputs[i].value.trim());
+    }
+
+    if (links.length === 0) { status.innerHTML = '⚠️ Вставь ссылки!'; return; }
+
+    var found = false;
+    links.forEach(function(url, index) {
+        setTimeout(function() {
+            if (found) return;
+            status.innerHTML = '🔍 Поиск (ссылка №' + (index + 1) + ')...';
+            
+            client.add(url, { announce: [] }, function (torrent) {
+                torrent.on('ready', function () {
+                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                    if (file && !found) {
+                        found = true;
+                        status.innerHTML = '✅ Воспроизведение!';
+                        file.renderTo('#player', { autoplay: true });
+                    }
+                });
+            });
+        }, index * 2000); // Сократил интервал, чтобы быстрее проверять
+    });
+}
+    </script>
+</body>
+</html>
