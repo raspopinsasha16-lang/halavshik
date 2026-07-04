@@ -1,51 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Плеер - Базовый</title>
+    <title>Плеер - Тот самый рабочий</title>
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 </head>
 <body>
-    <div style="text-align: center; padding: 20px;">
-        <input type="text" id="magnetLink" placeholder="Вставь магнит-ссылку..." style="width: 80%; padding: 10px;">
-        <button onclick="initTorrent()" style="padding: 10px;">Подключиться</button>
+    <div style="text-align: center; margin: 20px;">
+        <input type="text" id="magnetLink" placeholder="Вставь magnet-ссылку..." style="width: 80%; padding: 10px;">
+        <button onclick="playMagnet()" style="padding: 10px;">Смотреть</button>
     </div>
-    
     <div id="status" style="text-align: center; font-weight: bold; margin: 10px;"></div>
     <div id="player" style="text-align: center;"></div>
 
     <script>
         var client = new WebTorrent();
 
-        function initTorrent() {
+        function playMagnet() {
             var magnet = document.getElementById('magnetLink').value.trim();
             var status = document.getElementById('status');
             var playerDiv = document.getElementById('player');
-
-            status.innerHTML = '🚀 Инициализация...';
-            playerDiv.innerHTML = ''; // Очищаем плеер
+            
+            // Очищаем предыдущий плеер
+            playerDiv.innerHTML = '';
+            status.innerHTML = '🚀 Загрузка метаданных...';
 
             client.torrents.forEach(t => client.destroy());
 
-            client.add(magnet, { 
-                announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
-            }, function (torrent) {
+            client.add(magnet, function (torrent) {
                 torrent.on('ready', function () {
                     status.innerHTML = '✅ Торрент готов!';
+                    // Ищем видеофайл
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    
                     if (file) {
-                        // Кнопка для обхода блокировки автоплея
-                        var btn = document.createElement("button");
-                        btn.innerHTML = "▶ ЗАПУСТИТЬ ВИДЕО";
-                        btn.style.padding = "20px";
-                        btn.style.fontSize = "18px";
-                        btn.onclick = function() {
-                            // Тот самый базовый метод, который ты просил
-                            file.renderTo('#player', { autoplay: true });
-                            btn.style.display = 'none';
-                            status.innerHTML = '🎬 Воспроизведение';
-                        };
-                        playerDiv.appendChild(btn);
+                        // То самое действие, которое работало всегда
+                        file.renderTo('#player', { autoplay: true });
+                    } else {
+                        status.innerHTML = '❌ Файл не найден';
                     }
                 });
             });
