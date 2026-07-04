@@ -27,9 +27,12 @@
             playChannel(magnet);
         }
 
-        function playChannel(magnet) {
+                function playChannel(magnet) {
             var status = document.getElementById('status');
             var playerDiv = document.getElementById('player');
+            
+            // МАЯЧОК 1: Проверка, что функция запущена
+            console.log("Функция playChannel запущена с магнитом:", magnet);
             status.innerHTML = '🚀 Инициализация...';
 
             client.torrents.forEach(t => client.remove(t));
@@ -37,24 +40,26 @@
             client.add(magnet, { 
                 announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
             }, function (torrent) {
+                // МАЯЧОК 2: Торрент добавлен
+                console.log("Торрент добавлен, ждем готовности...");
+                
                 torrent.on('ready', function () {
+                    console.log("Торрент готов!");
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                    
                     if (file) {
                         status.innerHTML = '✅ Канал готов! Нажми кнопку:';
-                        
                         var btn = document.createElement("button");
                         btn.innerHTML = "▶ ЗАПУСТИТЬ ТРАНСЛЯЦИЮ";
                         btn.style.width = "100%";
                         btn.style.padding = "20px";
-                        btn.style.marginTop = "10px";
-                        btn.style.backgroundColor = "red";
-                        btn.style.color = "white";
-                        
                         btn.onclick = function() {
                             status.innerHTML = '🎬 Воспроизведение...';
-                            // Используем Blob URL — это самый надежный способ для Android
                             file.getBlobURL(function (err, url) {
-                                if (err) return;
+                                if (err) {
+                                    status.innerHTML = '❌ Ошибка Blob: ' + err.message;
+                                    return;
+                                }
                                 var video = document.createElement('video');
                                 video.src = url;
                                 video.controls = true;
@@ -68,9 +73,18 @@
                         playerDiv.appendChild(btn);
                     } else {
                         status.innerHTML = '❌ В торренте нет видеофайла.';
+                        console.log("Файлы в торренте:", torrent.files.map(f => f.name));
                     }
                 });
+                
+                // МАЯЧОК 3: Ошибки торрента
+                torrent.on('error', function (err) {
+                    status.innerHTML = '❌ Ошибка торрента: ' + err.message;
+                    console.error(err);
+                });
             });
+        }
+
         }
     </script>
 </body>
