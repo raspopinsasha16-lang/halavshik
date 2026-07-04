@@ -30,12 +30,42 @@
             status.innerHTML = '🚀 Подключение...';
             client.torrents.forEach(t => client.remove(t));
 
-            client.add(magnet, { 
-                announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
-            }, function (torrent) {
-                torrent.on('ready', function () {
-                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    // ... внутри функции torrent.on('ready') ...
+            // Функция запуска канала
+function playChannel(magnet) {
+    var status = document.getElementById('status');
+    var playerDiv = document.getElementById('player');
+    
+    status.innerHTML = '🚀 Инициализация...';
+
+    // Очищаем старый плеер
+    client.torrents.forEach(t => client.remove(t));
+
+    client.add(magnet, { 
+        announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
+    }, function (torrent) {
+        torrent.on('ready', function () {
+            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+            if (file) {
+                status.innerHTML = '✅ Канал готов! Нажми кнопку ниже:';
+                
+                var btn = document.createElement("button");
+                btn.innerHTML = "▶ ЗАПУСТИТЬ ТРАНСЛЯЦИЮ";
+                btn.style.width = "100%";
+                btn.style.padding = "20px";
+                btn.style.marginTop = "10px";
+                btn.style.backgroundColor = "red";
+                btn.style.color = "white";
+                
+                btn.onclick = function() {
+                    file.renderTo('#player', { autoplay: true });
+                    btn.style.display = 'none'; // Убираем кнопку после запуска
+                };
+                playerDiv.appendChild(btn);
+            }
+        });
+    });
+}
+ ...
     if (file) {
         status.innerHTML = '✅ Найдено! Нажми кнопку ниже:';
         // Создаем кнопку, чтобы разблокировать автоплей для мобильного
