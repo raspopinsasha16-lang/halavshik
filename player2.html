@@ -78,65 +78,48 @@
         }
 
         // Инициализируем клиент с чистыми трекерами
-       // Инициализируем клиент без жестко заданных трекеров
-        var client = new WebTorrent();
         
-        var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
-
-        function addLinkField() {
-            var container = document.getElementById('links-container');
-            var count = container.getElementsByClassName('link-row').length + 1;
-            var div = document.createElement('div');
+var client = new WebTorrent();
             div.className = 'link-row';
             div.innerHTML = '<input type="text" class="magnet-input" placeholder="Ссылка №' + count + '">';
             container.appendChild(div);
         }
 
-        function playMagnet() {
-            playSound();
-            var inputs = document.getElementsByClassName('magnet-input');
-            var status = document.getElementById('status');
-            var links = [];
-            
-            for (var i = 0; i < inputs.length; i++) {
-                if (inputs[i].value.trim() !== "") links.push({url: inputs[i].value.trim(), id: i + 1});
-            }
+       function playMagnet() {
+    playSound();
+    var inputs = document.getElementsByClassName('magnet-input');
+    var status = document.getElementById('status');
+    var links = [];
+    
+    for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value.trim() !== "") links.push({url: inputs[i].value.trim(), id: i + 1});
+    }
 
-            if (links.length === 0) {
-                status.innerHTML = '⚠️ Вставь ссылку!';
-                return;
-            }
+    if (links.length === 0) {
+        status.innerHTML = '⚠️ Вставь ссылку!';
+        return;
+    }
 
-            status.innerHTML = '🔍 Поиск...';
-            var found = false;
+    var found = false;
+    links.forEach(function(item, index) {
+        setTimeout(function() {
+            if (found) return;
+            status.innerHTML = '🔍 Поиск (ссылка №' + item.id + ')...';
 
-            links.forEach(function(item, index) {
-                setTimeout(function() {
-                    if (found) return;
-                    status.innerHTML = '🔍 Проверка ссылки №' + item.id + '...';
-
-                    var torrent = client.add(item.url);
-                    
-                    // Таймер на 7 секунд: если торрент не «ожил», удаляем его и идем дальше
-                    var timeout = setTimeout(function() {
-                        if (!found) {
-                            client.remove(torrent);
-                            status.innerHTML = '⏳ Ссылка №' + item.id + ' молчит, следующая...';
-                        }
-                    }, 7000);
-
-                    torrent.on('ready', function () {
-                        clearTimeout(timeout); // Останавливаем таймер, если нашли видео
-                        var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                        if (file && !found) {
-                            found = true;
-                            status.innerHTML = '✅ Найдено: ' + torrent.name.substring(0, 20);
-                            file.renderTo('#player', { autoplay: true });
-                        }
-                    });
-                }, index * 8000); // 8 секунд паузы между попытками подключения
+            // Пустой announce: [] отключает попытки подключения к трекерам
+            client.add(item.url, { announce: [] }, function (torrent) {
+                torrent.on('ready', function () {
+                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                    if (file && !found) {
+                        found = true;
+                        status.innerHTML = '✅ Воспроизведение: ' + torrent.name.substring(0, 15);
+                        file.renderTo('#player', { autoplay: true });
+                    }
+                });
             });
-        }
+        }, index * 5000); // 5 секунд между попытками
+    });
+}
     </script>
 </body>
 </html>
