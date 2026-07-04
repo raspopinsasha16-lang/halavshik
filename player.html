@@ -8,74 +8,36 @@
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)), url('bg.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px 10px;
-            text-align: center;
-            min-height: 100vh;
-        }
-        h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
+        body { background: #111; color: #fff; text-align: center; padding: 20px; font-family: sans-serif; }
         .container { max-width: 600px; margin: 0 auto; }
-        
-        .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        
-        .tv-quick-btn { background: #248a3d; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin-bottom: 10px; }
-        
-        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
-        #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; }
-
-        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
-        .channel-btn { background: #1f1f1f; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-        .channel-btn:hover { background: #e50914; border-color: #e50914; }
-
-        .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; }
-        .back-btn:hover { color: #fff; }
+        .player-box { background: #222; padding: 20px; border-radius: 16px; border: 2px solid #e50914; }
+        .tv-quick-btn { background: #248a3d; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; }
+        .tv-channels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        .channel-btn { background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <audio id="clickSound" src="click.mp3" preload="auto"></audio>
-
     <div class="container">
-        <h1>🎬 Моё IPTV</h1>
-
         <div class="player-box">
-            <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Загрузить список каналов</button>
-            <div id="status">Нажмите кнопку для загрузки каналов</div>
-            <div id="video-container"></div>
+            <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Загрузить каналы</button>
+            <div id="video-container"><video id="player" playsinline controls></video></div>
             <div class="tv-channels-grid" id="channelsGrid"></div>
         </div>
-
-        <a href="index.html" class="back-btn" onclick="playSound()">← На главную страницу</a>
+        <a href="index.html" style="color:#aaa; display:block; margin-top:20px;">← На главную</a>
     </div>
 
     <script>
-        function playSound() { 
-            var audio = document.getElementById('clickSound');
-            audio.currentTime = 0;
-            audio.play().catch(function(e){}); 
-        }
-
-        var player;
+        var player = new Plyr('#player');
         var hlsInstance = null;
-        var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
         var menuProxy = 'https://proxy.cors.sh/';
 
-        function loadIPTVPlaylist(playlistUrl) {
-            playSound();
-            var status = document.getElementById('status');
-            var grid = document.getElementById('channelsGrid');
-            grid.innerHTML = '';
-            status.innerHTML = '⌛ Загрузка...';
-
-            fetch(menuProxy + playlistUrl)
+        function loadIPTVPlaylist(url) {
+            fetch(menuProxy + url)
                 .then(r => r.text())
                 .then(data => {
-                    status.innerHTML = '📺 Выберите канал:';
+                    var grid = document.getElementById('channelsGrid');
+                    grid.innerHTML = '';
                     var lines = data.split('\n');
                     lines.forEach(line => {
                         line = line.trim();
@@ -86,37 +48,22 @@
                                 var btn = document.createElement('button');
                                 btn.className = 'channel-btn';
                                 btn.innerText = name;
-                                btn.onclick = () => startStream(nextLine.trim(), name);
+                                btn.onclick = () => startStream(nextLine.trim());
                                 grid.appendChild(btn);
                             }
                         }
                     });
-                })
-                .catch(() => startStream(playlistUrl, "Прямой эфир"));
+                });
         }
 
-        function startStream(streamUrl, channelName) {
-            playSound();
-            var container = document.getElementById('video-container');
-            document.getElementById('status').innerHTML = '🚀 ' + channelName;
-            container.innerHTML = '<video id="player" playsinline controls></video>';
+        function startStream(streamUrl) {
             var video = document.getElementById('player');
-
             if (hlsInstance) hlsInstance.destroy();
             var url = 'https://corsproxy.io/?' + encodeURIComponent(streamUrl);
-
-            if (Hls.isSupported()) {
-                hlsInstance = new Hls();
-                hlsInstance.loadSource(url);
-                hlsInstance.attachMedia(video);
-                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                    player = new Plyr(video, plyrConfig);
-                    video.play().catch(() => {});
-                });
-            } else {
-                video.src = url;
-                player = new Plyr(video, plyrConfig);
-            }
+            hlsInstance = new Hls();
+            hlsInstance.loadSource(url);
+            hlsInstance.attachMedia(video);
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
         }
     </script>
 </body>
