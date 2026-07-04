@@ -78,14 +78,8 @@
         }
 
         // Инициализируем клиент с чистыми трекерами
-        var client = new WebTorrent({
-            tracker: {
-                announce: [
-                    'wss://tracker.openwebtorrent.com',
-                    'wss://tracker.webtorrent.io'
-                ]
-            }
-        });
+       // Инициализируем клиент без жестко заданных трекеров
+        var client = new WebTorrent();
         
         var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
 
@@ -121,17 +115,26 @@
                     if (found) return;
                     status.innerHTML = '🔍 Проверка ссылки №' + item.id + '...';
 
-                    // ВОТ ЗДЕСЬ ОН ДОЛЖЕН БЫТЬ:
-                    client.add(item.url, { destroyOnComplete: false }, function (torrent) {
+                    var torrent = client.add(item.url);
+                    
+                    // Таймер на 7 секунд: если торрент не «ожил», удаляем его и идем дальше
+                    var timeout = setTimeout(function() {
+                        if (!found) {
+                            client.remove(torrent);
+                            status.innerHTML = '⏳ Ссылка №' + item.id + ' молчит, следующая...';
+                        }
+                    }, 7000);
+
+                    torrent.on('ready', function () {
+                        clearTimeout(timeout); // Останавливаем таймер, если нашли видео
                         var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
                         if (file && !found) {
                             found = true;
-                            status.innerHTML = '✅ Найдено: ' + torrent.name;
+                            status.innerHTML = '✅ Найдено: ' + torrent.name.substring(0, 20);
                             file.renderTo('#player', { autoplay: true });
-                            client.torrents.forEach(t => { if (t !== torrent) client.remove(t); });
                         }
                     });
-                }, index * 1000); // Увеличил задержку до 1 секунды для надежности
+                }, index * 8000); // 8 секунд паузы между попытками подключения
             });
         }
     </script>
