@@ -1,53 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Плеер - С поддержкой Magnet</title>
+    <title>Моё IPTV</title>
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+    <style>
+        .channel-btn { display: block; width: 100%; padding: 15px; margin: 5px 0; background: #333; color: white; border: none; }
+        #player { margin-top: 20px; }
+    </style>
 </head>
 <body>
 
-    <div style="text-align: center; margin: 20px;">
-        <input type="text" id="magnetLink" placeholder="Вставь magnet:?xt=..." style="width: 80%; padding: 10px;">
-        <button onclick="playMagnet()" style="padding: 10px;">Смотреть</button>
-    </div>
-
-    <div id="status" style="text-align: center; font-weight: bold; margin: 10px;"></div>
-    <div id="player" style="text-align: center;"></div>
+    <div style="text-align: center;">
+        <h2>Моё IPTV</h2>
+        <div id="status" style="font-weight: bold; margin: 10px;"></div>
+        <div id="player"></div>
+        
+        <button class="channel-btn" onclick="playChannel('magnet:?xt=urn:btih:...')">Россия 1</button>
+        <button class="channel-btn" onclick="playChannel('magnet:?xt=urn:btih:...')">Первый канал</button>
+        </div>
 
     <script>
         var client = new WebTorrent();
 
-        function playMagnet() {
-            var input = document.getElementById('magnetLink').value.trim();
+        function playChannel(magnet) {
             var status = document.getElementById('status');
             var playerDiv = document.getElementById('player');
+            
+            status.innerHTML = '🚀 Запуск...';
+            playerDiv.innerHTML = ''; // Очистка старого видео
 
-            // Очистка перед новым запуском
-            playerDiv.innerHTML = '';
-            status.innerHTML = '🚀 Подключение...';
-
-            // Находим magnet-ссылку в строке
-            var magnet = input.substring(input.indexOf("magnet:"));
-
-            if (!magnet.startsWith("magnet:")) {
-                status.innerHTML = '❌ Ошибка: Вставь правильную magnet-ссылку!';
-                return;
-            }
-
+            // Останавливаем все предыдущие торренты
             client.torrents.forEach(t => t.destroy());
 
             client.add(magnet, function (torrent) {
                 torrent.on('ready', function () {
-                    status.innerHTML = '✅ Торрент готов!';
-                    
-                    // Ищем видеофайл
+                    status.innerHTML = '✅ Готово!';
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    
                     if (file) {
-                        // Тот самый базовый запуск
+                        // Тот самый метод, который ты просил
                         file.renderTo('#player', { autoplay: true });
-                    } else {
-                        status.innerHTML = '❌ Видеофайл не найден.';
                     }
                 });
             });
