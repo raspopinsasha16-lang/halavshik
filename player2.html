@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -83,84 +82,41 @@
         var client = new WebTorrent();
         var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
 
-      function playMagnet() {
-    playSound();
-    // Разделяем введенный текст по строкам или запятым
-    var rawInput = document.getElementById('magnetLink').value.trim();
-    var links = rawInput.split(/\n|,/).map(l => l.trim()).filter(l => l.length > 0);
-    var status = document.getElementById('status');
+        function playMagnet() {
+            playSound();
+            var rawInput = document.getElementById('magnetLink').value.trim();
+            // Разделяем введенный текст по строкам (для списка ссылок)
+            var links = rawInput.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            var status = document.getElementById('status');
 
-    if (links.length === 0) {
-        status.innerHTML = '⚠️ Пожалуйста, вставь хотя бы одну ссылку!';
-        return;
-    }
-
-    status.innerHTML = '🔍 Поиск рабочей ссылки из ' + links.length + '...';
-    
-    // Запускаем проверку каждой ссылки
-    var found = false;
-    links.forEach(function(link) {
-        if (found) return; // Если уже нашли, дальше не ищем
-
-        client.add(link, function (torrent) {
-            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-            
-            if (file && !found) {
-                found = true;
-                status.innerHTML = '✅ Найдено: ' + torrent.name;
-                file.renderTo('#player', { autoplay: true });
-                // Очищаем другие торренты, чтобы не грузили сеть
-                client.torrents.forEach(t => { if (t !== torrent) client.remove(t); });
+            if (links.length === 0) {
+                status.innerHTML = '⚠️ Пожалуйста, вставь хотя бы одну ссылку!';
+                return;
             }
-        });
-    });
-}
-        // Если это магнит-ссылка (как было раньше)
-        else if (link.startsWith('magnet:')) {
-            status.innerHTML = '⚡ Подключение к пирам...';
-            status.style.color = '#00bcd4';
+
+            status.innerHTML = '🔍 Поиск рабочей ссылки из ' + links.length + '...';
             
-            client.add(link, function (torrent) {
-                var file = torrent.files.find(function (f) {
-                    return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
-                });
-                
-                if (!file) {
-                    status.innerHTML = '❌ Видео не найдено.';
-                    return;
-                }
-                status.innerHTML = '⏳ Буферизация: ' + file.name;
-                file.renderTo('#player', { autoplay: true });
-            });
-        } 
-        else {
-            status.innerHTML = '❌ Неверный формат ссылки.';
-        }
-    }
+            var found = false;
+            links.forEach(function(link, index) {
+                if (found) return;
 
-                if (!file) {
-                    status.innerHTML = '❌ В этой раздаче не найдено поддерживаемых видеофайлов.';
-                    status.style.color = '#e50914';
-                    return;
-                }
+                // Задержка между проверками
+                setTimeout(function() {
+                    if (found) return;
+                    status.innerHTML = '🔍 Проверка ссылки №' + (index + 1) + '...';
 
-                status.innerHTML = '🎬 Буферизация: ' + file.name + ' (Размер: ' + (file.length / 1024 / 1024).toFixed(2) + ' MB)';
-                
-                // Направляем поток из торрента прямо в наш тег <video>
-                file.renderTo('video#player', { autoplay: true }, function(err, elem) {
-                    if (err) {
-                        status.innerHTML = '❌ Ошибка при попытке воспроизвести видео.';
-                        status.style.color = '#e50914';
-                        return;
-                    }
-                    status.innerHTML = '▶️ Воспроизведение: ' + file.name;
-                });
-            });
-
-            // Обработка ошибок самого WebTorrent
-            client.on('error', function (err) {
-                status.innerHTML = '❌ Ошибка клиента: ' + err.message;
-                status.style.color = '#e50914';
+                    client.add(link, function (torrent) {
+                        var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
+                        
+                        if (file && !found) {
+                            found = true;
+                            status.innerHTML = '✅ Найдено (ссылка №' + (index + 1) + '): ' + torrent.name;
+                            file.renderTo('#player', { autoplay: true });
+                            // Очищаем другие торренты
+                            client.torrents.forEach(t => { if (t !== torrent) client.remove(t); });
+                        }
+                    });
+                }, index * 500);
             });
         }
     </script>
