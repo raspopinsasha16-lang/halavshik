@@ -42,7 +42,6 @@
     var inputs = document.getElementsByClassName('magnet-input');
     var status = document.getElementById('status');
     
-    // 1. Очищаем все предыдущие торренты, чтобы не было ошибок "duplicate"
     client.torrents.forEach(function(t) {
         client.remove(t);
     });
