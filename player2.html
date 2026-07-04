@@ -15,9 +15,9 @@
         <div id="status" style="font-weight: bold; margin: 10px;"></div>
         <div id="player"></div>
         
-        <button class="channel-btn" onclick="playChannel('magnet:?xt=urn:btih:...')">Россия 1</button>
-        <button class="channel-btn" onclick="playChannel('magnet:?xt=urn:btih:...')">Первый канал</button>
-        </div>
+        <button class="channel-btn" onclick="playChannel('ТВОЙ_МАГНИТ_РОССИЯ_1')">Россия 1</button>
+        <button class="channel-btn" onclick="playChannel('ТВОЙ_МАГНИТ_ПЕРВЫЙ')">Первый канал</button>
+    </div>
 
     <script>
         var client = new WebTorrent();
@@ -26,10 +26,9 @@
             var status = document.getElementById('status');
             var playerDiv = document.getElementById('player');
             
-            status.innerHTML = '🚀 Запуск...';
-            playerDiv.innerHTML = ''; // Очистка старого видео
+            status.innerHTML = '🚀 Запуск: ' + event.target.innerText + '...';
+            playerDiv.innerHTML = ''; 
 
-            // Останавливаем все предыдущие торренты
             client.torrents.forEach(t => t.destroy());
 
             client.add(magnet, function (torrent) {
@@ -37,7 +36,6 @@
                     status.innerHTML = '✅ Готово!';
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
                     if (file) {
-                        // Тот самый метод, который ты просил
                         file.renderTo('#player', { autoplay: true });
                     }
                 });
