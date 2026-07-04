@@ -21,32 +21,28 @@
         }
         h1 { color: #e50914; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 20px; font-size: 28px; }
         .container { max-width: 600px; margin: 0 auto; }
-        
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         
-        /* Поле для ввода Magnet-ссылки */
-        input[type="text"] {
+        .magnet-input {
             width: 100%;
-            padding: 14px;
-            margin-bottom: 15px;
+            padding: 12px;
+            margin-bottom: 10px;
             border-radius: 8px;
             border: 1px solid #e50914;
             background: #000;
             color: #fff;
             box-sizing: border-box;
-            text-align: center;
-            font-size: 15px;
+            font-size: 14px;
         }
         
-        .main-play-btn { background: #e50914; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        .main-play-btn { background: #e50914; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
+        .add-btn { background: #444; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 15px; }
         
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
         #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; min-height: 20px; }
 
         .back-btn { display: inline-block; color: #aaa; text-decoration: none; font-size: 14px; margin-top: 20px; font-weight: bold; }
         .back-btn:hover { color: #fff; }
-
-        .plyr__controls [data-plyr="play"] { background: #e50914 !important; color: #fff !important; }
     </style>
 </head>
 <body>
@@ -57,9 +53,15 @@
         <h1>🎬 Кинотеатр (Magnet)</h1>
 
         <div class="player-box">
-            <input type="text" id="magnetLink" placeholder="Вставь Magnet-ссылку 🧲">
-            <button class="main-play-btn" onclick="playMagnet()">Запустить фильм</button>
-            <div id="status">Вставь ссылку и нажми кнопку запуска</div>
+            <div id="links-container">
+                <div class="link-row">
+                    <input type="text" class="magnet-input" placeholder="Ссылка №1">
+                </div>
+            </div>
+            
+            <button class="add-btn" onclick="addLinkField()">➕ Добавить еще ссылку</button>
+            <button class="main-play-btn" onclick="playMagnet()">🎬 Запустить поиск</button>
+            <div id="status">Вставь ссылки и нажми кнопку запуска</div>
             
             <div id="video-container">
                 <video id="player" playsinline controls></video>
@@ -72,47 +74,50 @@
     <script>
         function playSound() { 
             var audio = document.getElementById('clickSound');
-            if (audio) {
-                audio.currentTime = 0;
-                audio.play().catch(function(e){}); 
-            }
+            if (audio) { audio.currentTime = 0; audio.play().catch(function(e){}); }
         }
 
-        // Инициализируем торрент-клиент и плеер
         var client = new WebTorrent();
         var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
 
+        function addLinkField() {
+            var container = document.getElementById('links-container');
+            var count = container.getElementsByClassName('link-row').length + 1;
+            var div = document.createElement('div');
+            div.className = 'link-row';
+            div.innerHTML = '<input type="text" class="magnet-input" placeholder="Ссылка №' + count + '">';
+            container.appendChild(div);
+        }
+
         function playMagnet() {
             playSound();
-            var rawInput = document.getElementById('magnetLink').value.trim();
-            // Разделяем введенный текст по строкам (для списка ссылок)
-            var links = rawInput.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            var inputs = document.getElementsByClassName('magnet-input');
             var status = document.getElementById('status');
+            var links = [];
+            
+            for (var i = 0; i < inputs.length; i++) {
+                if (inputs[i].value.trim() !== "") links.push({url: inputs[i].value.trim(), id: i + 1});
+            }
 
             if (links.length === 0) {
-                status.innerHTML = '⚠️ Пожалуйста, вставь хотя бы одну ссылку!';
+                status.innerHTML = '⚠️ Вставь хотя бы одну ссылку!';
                 return;
             }
 
-            status.innerHTML = '🔍 Поиск рабочей ссылки из ' + links.length + '...';
-            
+            status.innerHTML = '🔍 Поиск среди ' + links.length + ' ссылок...';
             var found = false;
-            links.forEach(function(link, index) {
-                if (found) return;
 
-                // Задержка между проверками
+            links.forEach(function(item, index) {
                 setTimeout(function() {
                     if (found) return;
-                    status.innerHTML = '🔍 Проверка ссылки №' + (index + 1) + '...';
+                    status.innerHTML = '🔍 Проверка ссылки №' + item.id + '...';
 
-                    client.add(link, function (torrent) {
+                    client.add(item.url, function (torrent) {
                         var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                        
                         if (file && !found) {
                             found = true;
-                            status.innerHTML = '✅ Найдено (ссылка №' + (index + 1) + '): ' + torrent.name;
+                            status.innerHTML = '✅ Найдено (ссылка №' + item.id + '): ' + torrent.name;
                             file.renderTo('#player', { autoplay: true });
-                            // Очищаем другие торренты
                             client.torrents.forEach(t => { if (t !== torrent) client.remove(t); });
                         }
                     });
