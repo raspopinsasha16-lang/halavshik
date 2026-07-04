@@ -83,32 +83,48 @@
         var client = new WebTorrent();
         var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
 
-        function playMagnet() {
-            playSound();
-            var link = document.getElementById('magnetLink').value.trim();
-            var status = document.getElementById('status');
-            
-            if (!link) {
-                status.innerHTML = '⚠️ Пожалуйста, вставь ссылку!';
-                status.style.color = '#e50914';
-                return;
-            }
+       function playMagnet() {
+        playSound();
+        var link = document.getElementById('magnetLink').value.trim();
+        var status = document.getElementById('status');
 
-            if (!link.startsWith('magnet:')) {
-                status.innerHTML = '⚠️ Ссылка должна начинаться с "magnet:"';
-                status.style.color = '#e50914';
-                return;
-            }
+        if (!link) {
+            status.innerHTML = '⚠️ Пожалуйста, вставь ссылку!';
+            status.style.color = '#e50914';
+            return;
+        }
 
-            status.innerHTML = '⚡ Подключение к пирам... Это может занять немного времени.';
+        // Если это прямая ссылка (http/https)
+        if (link.startsWith('http')) {
+            status.innerHTML = '🚀 Загрузка видео по ссылке...';
+            status.style.color = '#007bff';
+            // Направляем прямую ссылку прямо в плеер
+            document.getElementById('player').src = link;
+            document.getElementById('player').play();
+            status.innerHTML = '✅ Воспроизведение прямой ссылки';
+        } 
+        // Если это магнит-ссылка (как было раньше)
+        else if (link.startsWith('magnet:')) {
+            status.innerHTML = '⚡ Подключение к пирам...';
             status.style.color = '#00bcd4';
-
-            // Если торрент с таким инфо-хэшем уже качается, удаляем его, чтобы запустить новый
+            
             client.add(link, function (torrent) {
-                // Ищем файл с видео (mp4, webm, mkv)
                 var file = torrent.files.find(function (f) {
                     return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
                 });
+                
+                if (!file) {
+                    status.innerHTML = '❌ Видео не найдено.';
+                    return;
+                }
+                status.innerHTML = '⏳ Буферизация: ' + file.name;
+                file.renderTo('#player', { autoplay: true });
+            });
+        } 
+        else {
+            status.innerHTML = '❌ Неверный формат ссылки.';
+        }
+    }
 
                 if (!file) {
                     status.innerHTML = '❌ В этой раздаче не найдено поддерживаемых видеофайлов.';
