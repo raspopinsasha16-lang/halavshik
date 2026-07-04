@@ -77,8 +77,16 @@
             if (audio) { audio.currentTime = 0; audio.play().catch(function(e){}); }
         }
 
-        var client = new WebTorrent();
-        var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
+        var client = new WebTorrent({
+    tracker: {
+        announce: [
+            'wss://tracker.btorrent.xyz',
+            'wss://tracker.openwebtorrent.com',
+            'wss://tracker.fastcast.nz',
+            'wss://tracker.webtorrent.io'
+        ]
+    }
+});
 
         function addLinkField() {
             var container = document.getElementById('links-container');
