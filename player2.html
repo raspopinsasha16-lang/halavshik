@@ -35,12 +35,21 @@
             }, function (torrent) {
                 torrent.on('ready', function () {
                     var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    if (file) {
-                        status.innerHTML = '🎬 Воспроизведение!';
-                        file.renderTo('#player', { autoplay: true });
-                    } else {
-                        status.innerHTML = '❌ В торренте нет видеофайла.';
-                    }
+                    // ... внутри функции torrent.on('ready') ...
+    if (file) {
+        status.innerHTML = '✅ Найдено! Нажми кнопку ниже:';
+        // Создаем кнопку, чтобы разблокировать автоплей для мобильного
+        var btn = document.createElement("button");
+        btn.innerHTML = "▶ ЗАПУСТИТЬ ПОТОК";
+        btn.style.padding = "20px";
+        btn.onclick = function() {
+            file.renderTo('#player', { autoplay: true });
+            btn.style.display = 'none';
+        };
+        document.body.appendChild(btn);
+    }
+// ...
+
                 });
             });
         }
