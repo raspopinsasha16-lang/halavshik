@@ -13,78 +13,56 @@
     <div id="player" style="text-align: center;"></div>
 
     <script>
-        var client = new WebTorrent();
+        // В самом верху скрипта, перед всеми функциями
+var client = new WebTorrent();
 
-        function playMagnet() {
-            var input = document.getElementById('magnetLink').value.trim();
-            var status = document.getElementById('status');
-            var magnet = input.substring(input.indexOf("magnet:"));
+function playChannel(magnet) {
+    var status = document.getElementById('status');
+    var playerDiv = document.getElementById('player');
+    
+    status.innerHTML = '🚀 Подключаюсь...';
+
+    // ОЧЕНЬ ВАЖНО: принудительно очищаем всё старое
+    if (client.torrents.length > 0) {
+        client.torrents.forEach(t => client.destroy()); 
+        // Если destroy не помогает, создаем новый клиент
+        client = new WebTorrent();
+    }
+
+    client.add(magnet, { 
+        announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
+    }, function (torrent) {
+        // Убираем ожидание готовности, если оно «зависает»
+        torrent.on('metadata', function () {
+            status.innerHTML = '⚡ Метаданные получены!';
+        });
+
+        torrent.on('ready', function () {
+            status.innerHTML = '✅ Готово!';
+            var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
             
-            if (!magnet.startsWith("magnet:")) {
-                status.innerHTML = '❌ Ошибка: Вставь правильную magnet-ссылку!';
-                return;
+            if (file) {
+                var btn = document.createElement("button");
+                btn.innerHTML = "▶ СМОТРЕТЬ";
+                btn.style.width = "100%";
+                btn.style.padding = "20px";
+                btn.onclick = function() {
+                    file.getBlobURL(function (err, url) {
+                        var video = document.createElement('video');
+                        video.src = url;
+                        video.controls = true;
+                        video.autoplay = true;
+                        video.style.width = '100%';
+                        playerDiv.innerHTML = '';
+                        playerDiv.appendChild(video);
+                    });
+                    btn.style.display = 'none';
+                };
+                playerDiv.appendChild(btn);
             }
-            playChannel(magnet);
-        }
-
-                function playChannel(magnet) {
-            var status = document.getElementById('status');
-            var playerDiv = document.getElementById('player');
-            
-            // МАЯЧОК 1: Проверка, что функция запущена
-            console.log("Функция playChannel запущена с магнитом:", magnet);
-            status.innerHTML = '🚀 Инициализация...';
-
-            client.torrents.forEach(t => client.remove(t));
-
-            client.add(magnet, { 
-                announce: ['wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'] 
-            }, function (torrent) {
-                // МАЯЧОК 2: Торрент добавлен
-                console.log("Торрент добавлен, ждем готовности...");
-                
-                torrent.on('ready', function () {
-                    console.log("Торрент готов!");
-                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    
-                    if (file) {
-                        status.innerHTML = '✅ Канал готов! Нажми кнопку:';
-                        var btn = document.createElement("button");
-                        btn.innerHTML = "▶ ЗАПУСТИТЬ ТРАНСЛЯЦИЮ";
-                        btn.style.width = "100%";
-                        btn.style.padding = "20px";
-                        btn.onclick = function() {
-                            status.innerHTML = '🎬 Воспроизведение...';
-                            file.getBlobURL(function (err, url) {
-                                if (err) {
-                                    status.innerHTML = '❌ Ошибка Blob: ' + err.message;
-                                    return;
-                                }
-                                var video = document.createElement('video');
-                                video.src = url;
-                                video.controls = true;
-                                video.autoplay = true;
-                                video.style.width = '100%';
-                                playerDiv.innerHTML = '';
-                                playerDiv.appendChild(video);
-                            });
-                            btn.style.display = 'none';
-                        };
-                        playerDiv.appendChild(btn);
-                    } else {
-                        status.innerHTML = '❌ В торренте нет видеофайла.';
-                        console.log("Файлы в торренте:", torrent.files.map(f => f.name));
-                    }
-                });
-                
-                // МАЯЧОК 3: Ошибки торрента
-                torrent.on('error', function (err) {
-                    status.innerHTML = '❌ Ошибка торрента: ' + err.message;
-                    console.error(err);
-                });
-            });
-        }
-
+        });
+    });
+}
         }
     </script>
 </body>
