@@ -25,37 +25,52 @@
         var client = new WebTorrent();
         
         function searchAndPlay() {
-            var query = document.getElementById('movieSearch').value;
-            var status = document.getElementById('status');
-            
-            if (!query) { status.innerHTML = '⚠️ Введите название!'; return; }
-            status.innerHTML = '🔍 Ищу через прокси-шлюз...';
+    var query = document.getElementById('movieSearch').value;
+    var status = document.getElementById('status');
+    
+    if (!query) { status.innerHTML = '⚠️ Введите название!'; return; }
+    status.innerHTML = '🔍 Попытка прямого соединения...';
 
-            // Используем шлюз allorigins, чтобы обойти блокировку CORS
-            var apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://yts.mx/api/v2/list_movies.json?query_term=' + query);
-
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    var parsed = JSON.parse(data.contents);
-                    
-                    if (!parsed.data.movies) {
-                        status.innerHTML = '❌ Фильм не найден.';
-                        return;
-                    }
-                    
-                    var movie = parsed.data.movies[0];
-                    var torrent = movie.torrents[0];
-                    var magnet = 'magnet:?xt=urn:btih:' + torrent.hash + '&dn=' + encodeURIComponent(movie.title) + '&tr=wss%3A%2F%2Ftracker.openwebtorrent.com';
-                    
-                    status.innerHTML = '✅ Нашел: ' + movie.title + '. Запускаю...';
-                    startPlayback(magnet);
-                })
-                .catch(err => {
-                    status.innerHTML = '❌ Ошибка сети: ' + err.message;
-                    console.error('Детали ошибки:', err);
-                });
+    // Пробуем напрямую, но добавляем режим 'cors'
+    fetch('https://yts.mx/api/v2/list_movies.json?query_term=' + encodeURIComponent(query), {
+        mode: 'cors',
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Сервер ответил: ' + response.status);
+        return response.json();
+    })
+    .then(data => {
+        if (!data.data || !data.data.movies) {
+            status.innerHTML = '❌ Фильм не найден.';
+            return;
         }
+        
+        var movie = data.data.movies[0];
+        var torrent = movie.torrents[0];
+        var magnet = 'magnet:?xt=urn:btih:' + torrent.hash + '&dn=' + encodeURIComponent(movie.title) + '&tr=wss%3A%2F%2Ftracker.openwebtorrent.com';
+        
+        status.innerHTML = '✅ Нашел: ' + movie.title + '. Запускаю...';
+        startPlayback(magnet);
+    })
+    .catch(err => {
+        // Если напрямую не вышло, пробуем еще один прокси, но другой
+        status.innerHTML = '⚠️ Прямой доступ закрыт. Пробую резерв...';
+        fallbackSearch(query);
+    });
+}
+
+function fallbackSearch(query) {
+    // Резервный прокси (cors-anywhere)
+    fetch('https://corsproxy.io/?https://yts.mx/api/v2/list_movies.json?query_term=' + encodeURIComponent(query))
+        .then(res => res.json())
+        .then(data => {
+            var movie = data.data.movies[0];
+            var magnet = 'magnet:?xt=urn:btih:' + movie.torrents[0].hash + '&tr=wss%3A%2F%2Ftracker.openwebtorrent.com';
+            startPlayback(magnet);
+        })
+        .catch(e => status.innerHTML = '❌ Всё заблокировано. Нужен VPN.');
+}
 
         function startPlayback(magnet) {
             client.torrents.forEach(t => client.remove(t));
