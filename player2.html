@@ -77,16 +77,17 @@
             if (audio) { audio.currentTime = 0; audio.play().catch(function(e){}); }
         }
 
+        // Инициализируем клиент с чистыми трекерами
         var client = new WebTorrent({
-    tracker: {
-        announce: [
-            'wss://tracker.btorrent.xyz',
-            'wss://tracker.openwebtorrent.com',
-            'wss://tracker.fastcast.nz',
-            'wss://tracker.webtorrent.io'
-        ]
-    }
-});
+            tracker: {
+                announce: [
+                    'wss://tracker.openwebtorrent.com',
+                    'wss://tracker.webtorrent.io'
+                ]
+            }
+        });
+        
+        var player = new Plyr('#player', { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
 
         function addLinkField() {
             var container = document.getElementById('links-container');
@@ -108,11 +109,11 @@
             }
 
             if (links.length === 0) {
-                status.innerHTML = '⚠️ Вставь хотя бы одну ссылку!';
+                status.innerHTML = '⚠️ Вставь ссылку!';
                 return;
             }
 
-            status.innerHTML = '🔍 Поиск среди ' + links.length + ' ссылок...';
+            status.innerHTML = '🔍 Поиск...';
             var found = false;
 
             links.forEach(function(item, index) {
@@ -120,16 +121,17 @@
                     if (found) return;
                     status.innerHTML = '🔍 Проверка ссылки №' + item.id + '...';
 
-                    client.add(item.url, function (torrent) {
+                    // ВОТ ЗДЕСЬ ОН ДОЛЖЕН БЫТЬ:
+                    client.add(item.url, { destroyOnComplete: false }, function (torrent) {
                         var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
                         if (file && !found) {
                             found = true;
-                            status.innerHTML = '✅ Найдено (ссылка №' + item.id + '): ' + torrent.name;
+                            status.innerHTML = '✅ Найдено: ' + torrent.name;
                             file.renderTo('#player', { autoplay: true });
                             client.torrents.forEach(t => { if (t !== torrent) client.remove(t); });
                         }
                     });
-                }, index * 500);
+                }, index * 1000); // Увеличил задержку до 1 секунды для надежности
             });
         }
     </script>
