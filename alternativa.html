@@ -71,6 +71,7 @@
 </head>
 <body>
 
+    <!-- Аудио-треки -->
     <audio id="clickSound" src="click.mp3" preload="auto"></audio>
     <audio id="engineStartSound" src="click2.mp3" preload="auto"></audio>
     <audio id="engineDriveSound" src="click3.mp3" preload="auto" loop></audio>
@@ -105,30 +106,36 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // ЗАГРУЗКА ИЗОБРАЖЕНИЯ САЛОНА
+        const dashImage = new Image();
+        dashImage.src = 'dashboard.png'; // Убедись, что файл лежит в той же папке на GitHub
+        let dashLoaded = false;
+        dashImage.onload = () => { dashLoaded = true; };
+
         // Состояние игры
         let speed = 0;
         let maxSpeed = 150;
         let odometer = 1240.0;
         let fuel = 85;
         let score = 1240;
-        let playerX = 0; // Положение машины на дороге (-1 до 1)
-        let steeringAngle = 0; // Угол поворота руля
-        let cameraPan = 0; // Поворот камеры (-30 до 30)
-        let engineStarted = false; // Состояние двигателя (выключен по умолчанию)
+        let playerX = 0; 
+        let steeringAngle = 0; 
+        let cameraPan = 0; 
+        let engineStarted = false; 
 
         // Интерактивные элементы торпеды
         let radioOn = false;
-        let heaterLevel = 0; // 0 - выкл, 1 - тепло, 2 - жара
-        let dashLightsColor = '#333'; // Выключены
+        let heaterLevel = 0; 
+        let dashLightsColor = 'rgba(0, 255, 100, 0.5)'; 
 
         // Клавиши управления
         let keys = { w: false, a: false, s: false, d: false, q: false, e: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
-        // Дорога и окружение
+        // Дорога
         let roadLines = [];
         for (let i = 0; i < 10; i++) roadLines.push(i * 50);
 
-        // Попутный трафик
+        // Трафик
         let traffic = [
             { x: -0.3, y: 300, speed: 40, type: 'truck' },
             { x: 0.4, y: 100, speed: 60, type: 'car' }
@@ -146,45 +153,38 @@
             if (e.key in keys) keys[e.key] = false;
         });
 
-       // Клик по холсту (интерактивная торпеда)
+        // Клик по торпеде
         canvas.addEventListener('click', e => {
             const rect = canvas.getBoundingClientRect();
             const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
             const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-            // 1. Клик по рулю/замку зажигания (Запуск двигателя)
+            // Зона руля / замка зажигания
             if (clickX >= 150 && clickX <= 350 && clickY >= 360 && clickY <= 500) {
                 if (!engineStarted) {
                     engineStarted = true;
                     document.getElementById('engineStartSound').play();
                     
-                    // Запускаем фоновый звук езды click3.mp3 сразу после стартера
                     setTimeout(() => {
                         if (engineStarted) {
                             const driveSound = document.getElementById('engineDriveSound');
-                            driveSound.volume = 0.3; // Тихий звук на холостых
-                            driveSound.playbackRate = 0.8; // Низкий тон на холостых
-                            driveSound.play().catch(e => console.log("Ошибка звука:", e));
+                            driveSound.volume = 0.3;
+                            dashImage.playbackRate = 0.8;
+                            driveSound.play().catch(err => console.log(err));
                         }
-                    }, 1500); // Задержка 1.5 секунды, пока отрабатывает стартер
-
-                    dashLightsColor = 'rgba(0, 255, 100, 0.7)'; // Зажигаем приборку зеленоватым
+                    }, 1500);
                 }
             }
 
-            // 2. Клик по магнитоле (работает только если мотор заведен)
+            // Зона магнитолы
             if (clickX >= 480 && clickX <= 580 && clickY >= 360 && clickY <= 400) {
                 document.getElementById('clickSound').play();
-                if (engineStarted) {
-                    radioOn = !radioOn;
-                }
+                if (engineStarted) radioOn = !radioOn;
             }
-            // 3. Клик по ползункам печки (работает только если мотор заведен)
+            // Зона печки
             if (clickX >= 480 && clickX <= 560 && clickY >= 415 && clickY <= 445) {
                 document.getElementById('clickSound').play();
-                if (engineStarted) {
-                    heaterLevel = (heaterLevel + 1) % 3;
-                }
+                if (engineStarted) heaterLevel = (heaterLevel + 1) % 3;
             }
         });
 
@@ -207,18 +207,15 @@
             btn.addEventListener('mouseup', end);
         }
 
-        // Основной игровой цикл
         function gameLoop() {
             update();
             render();
             requestAnimationFrame(gameLoop);
         }
 
-        // Логика игры
         function update() {
             let isGassing = keys.w || keys.ArrowUp;
 
-            // 1. Управление газом и тормозом (Газ работает только при заведенном двигателе)
             if (isGassing && engineStarted) {
                 speed += 0.5;
                 if (speed > maxSpeed) speed = maxSpeed;
@@ -226,25 +223,20 @@
                 speed -= 1.5;
                 if (speed < 0) speed = 0;
             } else {
-                speed -= 0.2; // Инерция
+                speed -= 0.2;
                 if (speed < 0) speed = 0;
             }
 
-            // Динамическое изменение звука click3.mp3 в зависимости от газа и скорости
             if (engineStarted) {
                 const driveSound = document.getElementById('engineDriveSound');
                 if (driveSound) {
-                    // Рассчитываем виртуальные обороты (RPM)
                     let rpmFactor = (speed / maxSpeed); 
-                    if (isGassing) rpmFactor += 0.2; // Газ в пол поднимает обороты
-
-                    // Меняем тон (скорость воспроизведения) и громкость
-                    driveSound.playbackRate = 0.8 + (rpmFactor * 1.2); // От 0.8 до 2.0
-                    driveSound.volume = isGassing ? 0.7 : 0.3; // Громче при разгоне
+                    if (isGassing) rpmFactor += 0.2; 
+                    driveSound.playbackRate = 0.8 + (rpmFactor * 1.2); 
+                    driveSound.volume = isGassing ? 0.7 : 0.3; 
                 }
             }
 
-            // 2. Управление рулем
             if (keys.a || keys.ArrowLeft) {
                 playerX -= 0.005 * (speed / 50);
                 steeringAngle -= 0.05;
@@ -254,14 +246,12 @@
                 steeringAngle += 0.05;
                 if (steeringAngle > 0.6) steeringAngle = 0.6;
             } else {
-                steeringAngle *= 0.8; // Возврат руля в центр
+                steeringAngle *= 0.8;
             }
 
-            // Ограничение съезда с дороги
             if (playerX < -1.2) playerX = -1.2;
             if (playerX > 1.2) playerX = 1.2;
 
-            // 3. Поворот камеры (Головы водителя)
             if (keys.q) {
                 cameraPan += 2;
                 if (cameraPan > 25) cameraPan = 25;
@@ -269,23 +259,20 @@
                 cameraPan -= 2;
                 if (cameraPan < -25) cameraPan = -25;
             } else {
-                cameraPan *= 0.8; // Возврат камеры в центр
+                cameraPan *= 0.8;
             }
 
-            // Движение разметки дороги
             for (let i = 0; i < roadLines.length; i++) {
                 roadLines[i] += speed * 0.1;
                 if (roadLines[i] > 500) roadLines[i] = 0;
             }
 
-            // Движение трафика
             traffic.forEach(car => {
                 car.y += (speed - car.speed) * 0.05;
                 if (car.y > 500) { car.y = -50; car.x = (Math.random() * 1.6) - 0.8; }
                 if (car.y < -100) car.y = 500;
             });
 
-            // Расход бензина и пробег
             if (speed > 0) {
                 odometer += (speed * 0.0001);
                 score += Math.floor(speed * 0.01);
@@ -294,33 +281,28 @@
             }
         }
 
-        // Отрисовка графики
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
             ctx.translate(cameraPan * 2, 0);
 
-            // 1. РИСУЕМ ТРАССУ И НЕБО
+            // 1. ОКРУЖЕНИЕ (Остается на заднем плане под лобовым стеклом)
             ctx.fillStyle = '#0b0f19'; 
             ctx.fillRect(-200, 0, canvas.width + 400, 250);
 
-            // Луна
             ctx.fillStyle = '#fff';
             ctx.beginPath(); ctx.arc(600, 60, 20, 0, Math.PI*2); ctx.fill();
 
-            // Земля/Обочина
             ctx.fillStyle = '#141911'; 
             ctx.fillRect(-200, 250, canvas.width + 400, 250);
 
-            // Дорожное полотно
             ctx.fillStyle = '#222';
             ctx.beginPath();
             ctx.moveTo(350, 250); ctx.lineTo(450, 250);
             ctx.lineTo(800 - (playerX * 300), 500); ctx.lineTo(0 - (playerX * 300), 500);
             ctx.fill();
 
-            // Разметка
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 4;
             roadLines.forEach(lineY => {
@@ -332,7 +314,6 @@
                 ctx.stroke();
             });
 
-            // Трафик
             traffic.forEach(car => {
                 let carScale = car.y / 400;
                 if (carScale < 0.1) carScale = 0.1;
@@ -347,117 +328,72 @@
 
             ctx.restore(); 
 
-            // 2. САЛОН ВАЗ-2107
-            ctx.fillStyle = '#1e1e1e';
-            ctx.fillRect(0, 0, 40, 500); 
-            ctx.fillRect(760, 0, 40, 500); 
-            
-            ctx.fillStyle = '#0d2342'; 
-            ctx.beginPath();
-            ctx.moveTo(40, 310); ctx.lineTo(760, 310);
-            ctx.lineTo(800, 350); ctx.lineTo(0, 350);
-            ctx.fill();
-            ctx.strokeStyle = '#08172b'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(300, 310); ctx.lineTo(260, 350); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(500, 310); ctx.lineTo(540, 350); ctx.stroke();
+            // 2. ОТРИСОВКА САЛОНА
+            if (dashLoaded) {
+                // Если картинка загрузилась, рисуем её на нижнюю половину экрана (где торпеда)
+                // Координаты: x=0, y=260 (чтобы перекрыть дорогу снизу), ширина 800, высота 240
+                ctx.drawImage(dashImage, 0, 260, 800, 240);
+            } else {
+                // Запасной старый вариант салона, если картинка еще не подгрузилась
+                ctx.fillStyle = '#1e1e1e';
+                ctx.fillRect(0, 0, 40, 500); ctx.fillRect(760, 0, 40, 500); 
+                ctx.fillStyle = '#0d2342'; 
+                ctx.beginPath(); ctx.moveTo(40, 310); ctx.lineTo(760, 310); ctx.lineTo(800, 350); ctx.lineTo(0, 350); ctx.fill();
+                ctx.fillStyle = '#282828'; ctx.fillRect(0, 340, 800, 160);
+                ctx.fillStyle = '#1c1c1c'; ctx.fillRect(0, 460, 800, 40);
+            }
 
-            // ТОРПЕДА
-            ctx.fillStyle = '#282828';
-            ctx.fillRect(0, 340, 800, 160);
-            ctx.fillStyle = '#1c1c1c'; 
-            ctx.fillRect(0, 460, 800, 40);
-
-            // ЦИФЕРБЛАТЫ ПРИБОРОВ
-            ctx.fillStyle = '#111';
-            ctx.beginPath(); ctx.arc(200, 410, 45, 0, Math.PI*2); ctx.fill(); 
-            ctx.beginPath(); ctx.arc(310, 410, 45, 0, Math.PI*2); ctx.fill(); 
-            ctx.strokeStyle = '#444'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(200, 410, 45, 0, Math.PI*2); ctx.stroke();
-            ctx.beginPath(); ctx.arc(310, 410, 45, 0, Math.PI*2); ctx.stroke();
-
-            // Подсветка шкал
-            ctx.strokeStyle = engineStarted ? dashLightsColor : '#444';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(200, 410, 38, 0.8 * Math.PI, 2.2 * Math.PI); ctx.stroke();
-            ctx.beginPath(); ctx.arc(310, 410, 38, 0.8 * Math.PI, 2.2 * Math.PI); ctx.stroke();
+            // 3. НАКЛАДЫВАЕМ ДИНАМИЧЕСКИЕ СТРЕЛКИ (Привязаны к координатам шкал семерки)
+            // Центр спидометра (200, 410) и тахометра (310, 410). Подгоним если картинка сместится
+            if (engineStarted) {
+                ctx.fillStyle = dashLightsColor;
+                ctx.beginPath(); ctx.arc(200, 410, 40, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(310, 410, 40, 0, Math.PI*2); ctx.fill();
+            }
 
             // Стрелка спидометра
             let speedAngle = 0.8 * Math.PI + (speed / maxSpeed) * 1.4 * Math.PI;
             ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(200, 410);
+            ctx.beginPath(); ctx.moveTo(200, 410);
             ctx.lineTo(200 + Math.cos(speedAngle)*35, 410 + Math.sin(speedAngle)*35);
             ctx.stroke();
 
             // Стрелка тахометра
             let rpmAngle = 0.8 * Math.PI + ((speed * 1.2) / maxSpeed) * 1.4 * Math.PI + ((keys.w || keys.ArrowUp) && engineStarted ? 0.2 : 0);
-            ctx.beginPath();
-            ctx.moveTo(310, 410);
+            ctx.beginPath(); ctx.moveTo(310, 410);
             ctx.lineTo(310 + Math.cos(rpmAngle)*35, 410 + Math.sin(rpmAngle)*35);
             ctx.stroke();
 
-            // «Борода» семерки
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(470, 350, 130, 110);
-            
-            // МАГНИТОЛА
-            ctx.fillStyle = '#000';
-            ctx.fillRect(480, 365, 110, 30);
+            // Магнитола текстом поверх картинки
+            ctx.fillStyle = '#000'; ctx.fillRect(480, 365, 110, 30);
             ctx.fillStyle = engineStarted && radioOn ? '#00ff00' : '#333';
             ctx.font = '11px monospace';
-            ctx.fillText(engineStarted && radioOn ? "📻 НАШ ЭФИР: 100%" : "RADIO OFF", 488, 384);
+            ctx.fillText(engineStarted && radioOn ? "📻 НАШ ЭФИР" : "RADIO OFF", 488, 384);
 
-            // ПЕЧКА
-            ctx.fillStyle = '#333';
-            ctx.fillRect(480, 415, 80, 30);
-            ctx.fillStyle = '#ff3b30'; 
-            let heaterPos = 485 + (heaterLevel * 25);
-            ctx.fillRect(heaterPos, 420, 8, 20);
-            ctx.fillStyle = '#fff';
-            ctx.font = '9px sans-serif';
-            ctx.fillText("ПЕЧКА: " + (heaterLevel === 0 || !engineStarted ? "ВЫКЛ" : heaterLevel === 1 ? "ТЕПЛО" : "ЖАРА"), 485, 410);
-
-            // РУЛЬ
+            // РУЛЬ (Вращается поверх картинки)
             ctx.save();
             ctx.translate(250, 440); 
             ctx.rotate(steeringAngle);
-            
             ctx.strokeStyle = '#151515'; ctx.lineWidth = 14;
             ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2); ctx.stroke();
-            ctx.fillStyle = '#1c1c1c';
-            ctx.fillRect(-65, -10, 130, 20); 
-            ctx.fillRect(-15, 0, 30, 65); 
-            ctx.fillStyle = '#222';
-            ctx.fillRect(-25, -20, 50, 40);
-            ctx.strokeStyle = '#8e8e93'; ctx.lineWidth = 2;
-            ctx.strokeRect(-10, -8, 20, 16);
-            
+            ctx.fillStyle = '#1c1c1c'; ctx.fillRect(-65, -10, 130, 20); ctx.fillRect(-15, 0, 30, 65);
             ctx.restore();
 
             // HUD
-            ctx.fillStyle = 'rgba(0,0,0,0.8)';
-            ctx.fillRect(0, 0, 800, 40);
-            
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px sans-serif';
+            ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, 0, 800, 40);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
             ctx.fillText(`📊 Очки: ${score}`, 20, 25);
             ctx.fillText(`⏱ Скорость: ${Math.floor(speed)} км/ч`, 250, 25);
             ctx.fillText(`⛽ Топливо: ${Math.floor(fuel)}%`, 500, 25);
             ctx.fillText(`📟 Пробег: ${odometer.toFixed(1)} км`, 660, 25);
 
-            // Подсветка подсказки «Заведи классику»
             if (!engineStarted) {
-                ctx.fillStyle = 'rgba(0,0,0,0.75)';
-                ctx.fillRect(0, 150, 800, 60);
-                ctx.fillStyle = '#ffcc00';
-                ctx.font = 'bold 20px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText("КЛИКНИ НА РУЛЬ, ЧТОБЫ ЗАВЕСТИ КЛАССИКУ", 400, 188);
-                ctx.textAlign = 'start';
+                ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0, 150, 800, 60);
+                ctx.fillStyle = '#ffcc00'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText("КЛИКНИ НА РУЛЬ, ЧТОБЫ ЗАВЕСТИ КЛАССИКУ", 400, 188); ctx.textAlign = 'start';
             }
         }
 
-        // Запуск
         gameLoop();
     </script>
 </body>
