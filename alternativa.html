@@ -73,6 +73,7 @@
 
     <audio id="clickSound" src="click.mp3" preload="auto"></audio>
     <audio id="engineStartSound" src="click2.mp3" preload="auto"></audio>
+    <audio id="engineDriveSound" src="click3.mp3" preload="auto" loop></audio>
 
     <h1>🚗 ВАЗ-2107: Ночной Экспресс</h1>
     
@@ -156,6 +157,17 @@
                 if (!engineStarted) {
                     engineStarted = true;
                     document.getElementById('engineStartSound').play();
+                    
+                    // Запускаем фоновый звук езды click3.mp3 сразу после стартера
+                    setTimeout(() => {
+                        if (engineStarted) {
+                            const driveSound = document.getElementById('engineDriveSound');
+                            driveSound.volume = 0.3; // Тихий звук на холостых
+                            driveSound.playbackRate = 0.8; // Низкий тон на холостых
+                            driveSound.play().catch(e => console.log("Ошибка звука:", e));
+                        }
+                    }, 1500); // Задержка 1.5 секунды, пока отрабатывает стартер
+
                     dashLightsColor = 'rgba(0, 255, 100, 0.7)'; // Зажигаем приборку зеленоватым
                 }
             }
@@ -204,8 +216,10 @@
 
         // Логика игры
         function update() {
+            let isGassing = keys.w || keys.ArrowUp;
+
             // 1. Управление газом и тормозом (Газ работает только при заведенном двигателе)
-            if ((keys.w || keys.ArrowUp) && engineStarted) {
+            if (isGassing && engineStarted) {
                 speed += 0.5;
                 if (speed > maxSpeed) speed = maxSpeed;
             } else if (keys.s || keys.ArrowDown) {
@@ -214,6 +228,20 @@
             } else {
                 speed -= 0.2; // Инерция
                 if (speed < 0) speed = 0;
+            }
+
+            // Динамическое изменение звука click3.mp3 в зависимости от газа и скорости
+            if (engineStarted) {
+                const driveSound = document.getElementById('engineDriveSound');
+                if (driveSound) {
+                    // Рассчитываем виртуальные обороты (RPM)
+                    let rpmFactor = (speed / maxSpeed); 
+                    if (isGassing) rpmFactor += 0.2; // Газ в пол поднимает обороты
+
+                    // Меняем тон (скорость воспроизведения) и громкость
+                    driveSound.playbackRate = 0.8 + (rpmFactor * 1.2); // От 0.8 до 2.0
+                    driveSound.volume = isGassing ? 0.7 : 0.3; // Громче при разгоне
+                }
             }
 
             // 2. Управление рулем
@@ -362,7 +390,7 @@
             ctx.stroke();
 
             // Стрелка тахометра
-            let rpmAngle = 0.8 * Math.PI + ((speed * 1.2) / maxSpeed) * 1.4 * Math.PI + (keys.w && engineStarted ? 0.2 : 0);
+            let rpmAngle = 0.8 * Math.PI + ((speed * 1.2) / maxSpeed) * 1.4 * Math.PI + ((keys.w || keys.ArrowUp) && engineStarted ? 0.2 : 0);
             ctx.beginPath();
             ctx.moveTo(310, 410);
             ctx.lineTo(310 + Math.cos(rpmAngle)*35, 410 + Math.sin(rpmAngle)*35);
