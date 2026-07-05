@@ -135,26 +135,20 @@
             var status = document.getElementById('status');
             
             status.innerHTML = '🚀 Запуск: ' + channelName + '...';
-            // Очищаем контейнер
-            container.innerHTML = '<video id="player" class="video-js vjs-default-skin" playsinline controls style="width:100%;"></video>';
-            
+            container.innerHTML = '<video id="player" playsinline controls></video>';
             var videoElement = document.getElementById('player');
-            
-            // Используем hls.js для принудительной загрузки
+
+            if (hlsInstance) { hlsInstance.destroy(); }
+
+            // Используем другой прокси-сервер (всеядный)
+            var fastVideoUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(streamUrl);
+
             if (Hls.isSupported()) {
-                var hls = new Hls({
-                    debug: false,
-                    xhrSetup: function(xhr, url) {
-                        xhr.withCredentials = false; // Отключаем лишние проверки безопасности
-                    }
-                });
-                hls.loadSource(streamUrl);
-                hls.attachMedia(videoElement);
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    videoElement.play().catch(function(e) {
-                        console.log("Автоплей заблокирован, нужно нажать Play");
-                        status.innerHTML = '▶ Нажмите Play для запуска: ' + channelName;
-                    });
+                hlsInstance = new Hls();
+                hlsInstance.loadSource(fastVideoUrl);
+                hlsInstance.attachMedia(videoElement);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                    videoElement.play().catch(function(){});
                     status.innerHTML = '📺 Эфир: ' + channelName;
                 });
             } else {
