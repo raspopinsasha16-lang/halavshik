@@ -71,7 +71,6 @@
 </head>
 <body>
 
-    <!-- Аудио-треки -->
     <audio id="clickSound" src="click.mp3" preload="auto"></audio>
     <audio id="engineStartSound" src="click2.mp3" preload="auto"></audio>
     <audio id="engineDriveSound" src="click3.mp3" preload="auto" loop></audio>
@@ -108,7 +107,7 @@
 
         // ЗАГРУЗКА ИЗОБРАЖЕНИЯ САЛОНА
         const dashImage = new Image();
-        dashImage.src = 'dashboard.png'; // Убедись, что файл лежит в той же папке на GitHub
+        dashImage.src = 'dashboard.png'; 
         let dashLoaded = false;
         dashImage.onload = () => { dashLoaded = true; };
 
@@ -126,7 +125,7 @@
         // Интерактивные элементы торпеды
         let radioOn = false;
         let heaterLevel = 0; 
-        let dashLightsColor = 'rgba(0, 255, 100, 0.5)'; 
+        let dashLightsColor = 'rgba(0, 255, 100, 0.3)'; 
 
         // Клавиши управления
         let keys = { w: false, a: false, s: false, d: false, q: false, e: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -169,7 +168,7 @@
                         if (engineStarted) {
                             const driveSound = document.getElementById('engineDriveSound');
                             driveSound.volume = 0.3;
-                            dashImage.playbackRate = 0.8;
+                            driveSound.playbackRate = 0.8; // ИСПРАВЛЕНО: теперь меняем скорость звука, а не картинки
                             driveSound.play().catch(err => console.log(err));
                         }
                     }, 1500);
@@ -287,7 +286,7 @@
             ctx.save();
             ctx.translate(cameraPan * 2, 0);
 
-            // 1. ОКРУЖЕНИЕ (Остается на заднем плане под лобовым стеклом)
+            // 1. ОКРУЖЕНИЕ (Под лобовым стеклом)
             ctx.fillStyle = '#0b0f19'; 
             ctx.fillRect(-200, 0, canvas.width + 400, 250);
 
@@ -330,11 +329,8 @@
 
             // 2. ОТРИСОВКА САЛОНА
             if (dashLoaded) {
-                // Если картинка загрузилась, рисуем её на нижнюю половину экрана (где торпеда)
-                // Координаты: x=0, y=260 (чтобы перекрыть дорогу снизу), ширина 800, высота 240
                 ctx.drawImage(dashImage, 0, 260, 800, 240);
             } else {
-                // Запасной старый вариант салона, если картинка еще не подгрузилась
                 ctx.fillStyle = '#1e1e1e';
                 ctx.fillRect(0, 0, 40, 500); ctx.fillRect(760, 0, 40, 500); 
                 ctx.fillStyle = '#0d2342'; 
@@ -343,8 +339,7 @@
                 ctx.fillStyle = '#1c1c1c'; ctx.fillRect(0, 460, 800, 40);
             }
 
-            // 3. НАКЛАДЫВАЕМ ДИНАМИЧЕСКИЕ СТРЕЛКИ (Привязаны к координатам шкал семерки)
-            // Центр спидометра (200, 410) и тахометра (310, 410). Подгоним если картинка сместится
+            // 3. СТРЕЛКИ ПРИБОРОВ (Векторные, поверх картинки)
             if (engineStarted) {
                 ctx.fillStyle = dashLightsColor;
                 ctx.beginPath(); ctx.arc(200, 410, 40, 0, Math.PI*2); ctx.fill();
@@ -364,13 +359,13 @@
             ctx.lineTo(310 + Math.cos(rpmAngle)*35, 410 + Math.sin(rpmAngle)*35);
             ctx.stroke();
 
-            // Магнитола текстом поверх картинки
+            // Магнитола
             ctx.fillStyle = '#000'; ctx.fillRect(480, 365, 110, 30);
             ctx.fillStyle = engineStarted && radioOn ? '#00ff00' : '#333';
             ctx.font = '11px monospace';
             ctx.fillText(engineStarted && radioOn ? "📻 НАШ ЭФИР" : "RADIO OFF", 488, 384);
 
-            // РУЛЬ (Вращается поверх картинки)
+            // РУЛЬ
             ctx.save();
             ctx.translate(250, 440); 
             ctx.rotate(steeringAngle);
