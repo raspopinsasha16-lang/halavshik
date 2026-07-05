@@ -2,85 +2,418 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Кинотеатр</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВАЗ-2107 Симулятор | Халявщик</title>
     <style>
-        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .player-box { max-width: 600px; margin: 0 auto; background: #222; padding: 20px; border-radius: 10px; }
-        .magnet-input { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; background: #e50914; border: none; color: #fff; font-weight: bold; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #141414;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            text-align: center;
+            user-select: none;
+        }
+        h1 { color: #e50914; margin: 5px 0; font-size: 22px; }
+        .game-container { max-width: 800px; margin: 0 auto; position: relative; }
+        
+        /* Экран игры */
+        canvas {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            background: #000;
+            border: 2px solid #e50914;
+            border-radius: 12px;
+            display: block;
+        }
+
+        /* Инструкция по кнопкам */
+        .controls-info {
+            background: #1f1f1f;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #aaa;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .key { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #555; font-weight: bold;}
+
+        /* Мобильный блок управления */
+        .mobile-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .btn-ui {
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-ui:active { background: #e50914; border-color: #e50914; }
+        .back-btn { display: inline-block; color: #aaa; text-decoration: none; margin-top: 15px; font-weight: bold; }
+        .back-btn:hover { color: #fff; }
     </style>
 </head>
 <body>
-    <nav style="margin-bottom: 20px; background: #eee; padding: 10px; border-radius: 5px; text-align: center;">
-        <a href="index.html">Главная</a> | 
-        <a href="player2.html">Плеер 2 (API поиск)</a> | 
-        <a href="alternativa.html">Альтернатива (Гибрид)</a>
-    </nav>
 
-    <div id="player"></div>
-    ...
-</body>
-    <div class="player-box">
-        <h1>Кинотеатр</h1>
-        <div id="links-container">
-            <div class="link-row"><input type="text" class="magnet-input" placeholder="Ссылка №1"></div>
+    <h1>🚗 ВАЗ-2107: Ночной Экспресс</h1>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <div class="mobile-pad">
+            <button class="btn-ui" id="btnLeft">◀ Руль Л</button>
+            <button class="btn-ui" id="btnGas">ГАЗ (▲)</button>
+            <button class="btn-ui" id="btnRight">Руль П ▶</button>
+            <button class="btn-ui" id="btnCamL">🎥 Лев</button>
+            <button class="btn-ui" id="btnBrake">ТОРМОЗ (▼)</button>
+            <button class="btn-ui" id="btnCamR">🎥 Прав</button>
         </div>
-        <button onclick="addLinkField()">➕ Добавить еще ссылку</button>
-        <button onclick="playMagnet()">🎬 Запустить поиск</button>
-        <div id="status">Вставь ссылки</div>
-        <video id="player" playsinline controls style="width:100%"></video>
+
+        <div class="controls-info">
+            <div><span class="key">W</span> / <span class="key">▲</span> Газ</div>
+            <div><span class="key">S</span> / <span class="key">▼</span> Тормоз</div>
+            <div><span class="key">A</span> / <span class="key">◀</span> Левее</div>
+            <div><span class="key">D</span> / <span class="key">▶</span> Правее</div>
+            <div><span class="key">Q</span> / <span class="key">E</span> Камера Л/П</div>
+            <div><span class="key">Клик мыши</span> — Интерактивная торпеда (Печка/Магнитола)</div>
+        </div>
+
+        <a href="index.html" class="back-btn">← В главное меню</a>
     </div>
 
     <script>
-        var client = new WebTorrent();
-        var player = new Plyr('#player');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        function addLinkField() {
-            var container = document.getElementById('links-container');
-            var count = container.getElementsByClassName('link-row').length + 1;
-            var div = document.createElement('div');
-            div.className = 'link-row';
-            div.innerHTML = '<input type="text" class="magnet-input" placeholder="Ссылка №' + count + '">';
-            container.appendChild(div);
+        // Состояние игры
+        let speed = 0;
+        let maxSpeed = 150;
+        let odometer = 1240.0;
+        let fuel = 85;
+        let score = 1240;
+        let playerX = 0; // Положение машины на дороге (-1 до 1)
+        let steeringAngle = 0; // Угол поворота руля
+        let cameraPan = 0; // Поворот камеры (-30 до 30)
+
+        // Интерактивные элементы торпеды
+        let radioOn = false;
+        let heaterLevel = 0; // 0 - выкл, 1 - тепло, 2 - жара
+        let dashLightsColor = '#333'; // Выключены
+
+        // Клавиши управления
+        let keys = { w: false, a: false, s: false, d: false, q: false, e: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+        // Дорога и окружение
+        let roadLines = [];
+        for (let i = 0; i < 10; i++) roadLines.push(i * 50);
+
+        // Попутный трафик
+        let traffic = [
+            { x: -0.3, y: 300, speed: 40, type: 'truck' },
+            { x: 0.4, y: 100, speed: 60, type: 'car' }
+        ];
+
+        // Слушатели клавиатуры
+        window.addEventListener('keydown', e => { 
+            let k = e.key.toLowerCase();
+            if (k in keys) keys[k] = true;
+            if (e.key in keys) keys[e.key] = true;
+        });
+        window.addEventListener('keyup', e => { 
+            let k = e.key.toLowerCase();
+            if (k in keys) keys[k] = false;
+            if (e.key in keys) keys[e.key] = false;
+        });
+
+        // Клик по холсту (интерактивная торпеда)
+        canvas.addEventListener('click', e => {
+            const rect = canvas.getBoundingClientRect();
+            // Вычисляем реальные координаты клика на холсте 800x500
+            const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            // Клик по магнитоле (зона по центру справа)
+            if (clickX >= 480 && clickX <= 580 && clickY >= 360 && clickY <= 400) {
+                radioOn = !radioOn;
+                dashLightsColor = radioOn ? '#00ff00' : '#333'; // Включаем подсветку приборов
+            }
+            // Клик по ползункам печки (чуть ниже магнитолы)
+            if (clickX >= 480 && clickX <= 560 && clickY >= 415 && clickY <= 445) {
+                heaterLevel = (heaterLevel + 1) % 3;
+            }
+        });
+
+        // Мобильное управление
+        setupMobileBtn('btnGas', ['w', 'ArrowUp']);
+        setupMobileBtn('btnBrake', ['s', 'ArrowDown']);
+        setupMobileBtn('btnLeft', ['a', 'ArrowLeft']);
+        setupMobileBtn('btnRight', ['d', 'ArrowRight']);
+        setupMobileBtn('btnCamL', ['q']);
+        setupMobileBtn('btnCamR', ['e']);
+
+        function setupMobileBtn(id, keyCodes) {
+            const btn = document.getElementById(id);
+            if(!btn) return;
+            const start = (e) => { e.preventDefault(); keyCodes.forEach(k => keys[k] = true); };
+            const end = (e) => { e.preventDefault(); keyCodes.forEach(k => keys[k] = false); };
+            btn.addEventListener('touchstart', start);
+            btn.addEventListener('touchend', end);
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
         }
 
-        function playMagnet() {
-    var inputs = document.getElementsByClassName('magnet-input');
-    var status = document.getElementById('status');
-    
-    client.torrents.forEach(function(t) {
-        client.remove(t);
-    });
+        // Основной игровой цикл
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
 
-    var links = [];
-    for (var i = 0; i < inputs.length; i++) {
-        if (inputs[i].value.trim() !== "") links.push(inputs[i].value.trim());
-    }
+        // Логика игры
+        function update() {
+            // 1. Управление газом и тормозом
+            if (keys.w || keys.ArrowUp) {
+                speed += 0.5;
+                if (speed > maxSpeed) speed = maxSpeed;
+            } else if (keys.s || keys.ArrowDown) {
+                speed -= 1.5;
+                if (speed < 0) speed = 0;
+            } else {
+                speed -= 0.2; // Инерция
+                if (speed < 0) speed = 0;
+            }
 
-    if (links.length === 0) { status.innerHTML = '⚠️ Вставь ссылки!'; return; }
+            // 2. Управление рулем
+            if (keys.a || keys.ArrowLeft) {
+                playerX -= 0.005 * (speed / 50);
+                steeringAngle -= 0.05;
+                if (steeringAngle < -0.6) steeringAngle = -0.6;
+            } else if (keys.d || keys.ArrowRight) {
+                playerX += 0.005 * (speed / 50);
+                steeringAngle += 0.05;
+                if (steeringAngle > 0.6) steeringAngle = 0.6;
+            } else {
+                // Возврат руля в центр
+                steeringAngle *= 0.8;
+            }
 
-    var found = false;
-    links.forEach(function(url, index) {
-        setTimeout(function() {
-            if (found) return;
-            status.innerHTML = '🔍 Поиск (ссылка №' + (index + 1) + ')...';
-            
-            client.add(url, { announce: [] }, function (torrent) {
-                torrent.on('ready', function () {
-                    var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                    if (file && !found) {
-                        found = true;
-                        status.innerHTML = '✅ Воспроизведение!';
-                        file.renderTo('#player', { autoplay: true });
-                    }
-                });
+            // Ограничение съезда с дороги
+            if (playerX < -1.2) playerX = -1.2;
+            if (playerX > 1.2) playerX = 1.2;
+
+            // 3. Поворот камеры (Головы водителя)
+            if (keys.q) {
+                cameraPan += 2;
+                if (cameraPan > 25) cameraPan = 25;
+            } else if (keys.e) {
+                cameraPan -= 2;
+                if (cameraPan < -25) cameraPan = -25;
+            } else {
+                cameraPan *= 0.8; // Возврат камеры в центр
+            }
+
+            // Движение разметки дороги
+            for (let i = 0; i < roadLines.length; i++) {
+                roadLines[i] += speed * 0.1;
+                if (roadLines[i] > 500) roadLines[i] = 0;
+            }
+
+            // Движение трафика
+            traffic.forEach(car => {
+                car.y += (speed - car.speed) * 0.05;
+                if (car.y > 500) { car.y = -50; car.x = (Math.random() * 1.6) - 0.8; }
+                if (car.y < -100) car.y = 500;
             });
-        }, index * 2000); // Сократил интервал, чтобы быстрее проверять
-    });
-}
+
+            // Расход бензина и пробег
+            if (speed > 0) {
+                odometer += (speed * 0.0001);
+                score += Math.floor(speed * 0.01);
+                fuel -= 0.001;
+                if (fuel < 0) fuel = 100; // Бесконечный рестарт бака для фана
+            }
+        }
+
+        // Отрисовка графики
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            // Смещение всей картинки при повороте камеры (Q / E)
+            ctx.translate(cameraPan * 2, 0);
+
+            // 1. РИСУЕМ ТРАССУ И НЕБО (Псевдо-3D горизонт)
+            ctx.fillStyle = '#0b0f19'; // Ночное небо
+            ctx.fillRect(-200, 0, canvas.width + 400, 250);
+
+            // Луна / Дальний план
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(600, 60, 20, 0, Math.PI*2); ctx.fill();
+
+            // Земля/Обочина
+            ctx.fillStyle = '#141911'; 
+            ctx.fillRect(-200, 250, canvas.width + 400, 250);
+
+            // Дорожное полотно (Асфальт сужается к горизонту)
+            ctx.fillStyle = '#222';
+            ctx.beginPath();
+            ctx.moveTo(350, 250); ctx.lineTo(450, 250);
+            ctx.lineTo(800 - (playerX * 300), 500); ctx.lineTo(0 - (playerX * 300), 500);
+            ctx.fill();
+
+            // Разметка прерывистая
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            roadLines.forEach(lineY => {
+                let y = 250 + (lineY * 0.5);
+                let w = 2 + (lineY * 0.02);
+                let screenX = 400 - (playerX * (lineY * 0.6));
+                ctx.beginPath();
+                ctx.moveTo(screenX, y);
+                ctx.lineTo(screenX - (playerX * 0.2), y + 15);
+                ctx.stroke();
+            });
+
+            // Отрисовка трафика
+            traffic.forEach(car => {
+                let carScale = car.y / 400;
+                if (carScale < 0.1) carScale = 0.1;
+                let carX = 400 + (car.x - playerX) * car.y;
+                
+                ctx.fillStyle = car.type === 'truck' ? '#248a3d' : '#33b5e5';
+                ctx.fillRect(carX - (20 * carScale), car.y, 40 * carScale, 30 * carScale);
+                // Стоп-сигналы
+                ctx.fillStyle = 'red';
+                ctx.fillRect(carX - (18 * carScale), car.y + (20 * carScale), 8 * carScale, 5 * carScale);
+                ctx.fillRect(carX + (10 * carScale), car.y + (20 * carScale), 8 * carScale, 5 * carScale);
+            });
+
+            ctx.restore(); // Возвращаем обычные координаты для торпеды
+
+            // 2. САЛОН ВАЗ-2107 (Жестко зафиксирован на экране)
+            // Лобовое стекло (Стойки кузова)
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, 40, 500); // Левая стойка
+            ctx.fillRect(760, 0, 40, 500); // Правая стойка
+            
+            // Капот ВАЗ-2107 перед стеклом
+            ctx.fillStyle = '#0d2342'; // Темно-синяя семерка
+            ctx.beginPath();
+            ctx.moveTo(40, 310); ctx.lineTo(760, 310);
+            ctx.lineTo(800, 350); ctx.lineTo(0, 350);
+            ctx.fill();
+            // Выштамповка на капоте (Горб семерки)
+            ctx.strokeStyle = '#08172b'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(300, 310); ctx.lineTo(260, 350); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(500, 310); ctx.lineTo(540, 350); ctx.stroke();
+
+            // ОГРОМНАЯ ТОРПЕДА (Пластик салона)
+            ctx.fillStyle = '#282828';
+            ctx.fillRect(0, 340, 800, 160);
+            ctx.fillStyle = '#1c1c1c'; // Нижняя кромка
+            ctx.fillRect(0, 460, 800, 40);
+
+            // ЦИФЕРБЛАТЫ ПРИБОРОВ (Слева под рулем)
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.arc(200, 410, 45, 0, Math.PI*2); ctx.fill(); // Спидометр
+            ctx.beginPath(); ctx.arc(310, 410, 45, 0, Math.PI*2); ctx.fill(); // Тахометр
+            ctx.strokeStyle = '#444'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(200, 410, 45, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(310, 410, 45, 0, Math.PI*2); ctx.stroke();
+
+            // Подсветка огоньков шкал (Зеленоватая ВАЗовская)
+            ctx.strokeStyle = radioOn ? 'rgba(0, 255, 100, 0.7)' : '#666';
+            ctx.lineWidth = 2;
+            // Шкалы спидометра
+            ctx.beginPath(); ctx.arc(200, 410, 38, 0.8 * Math.PI, 2.2 * Math.PI); ctx.stroke();
+            // Стрелка спидометра (Отклоняется от скорости)
+            let speedAngle = 0.8 * Math.PI + (speed / maxSpeed) * 1.4 * Math.PI;
+            ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(200, 410);
+            ctx.lineTo(200 + Math.cos(speedAngle)*35, 410 + Math.sin(speedAngle)*35);
+            ctx.stroke();
+
+            // Стрелка тахометра (Гуляет от газа)
+            let rpmAngle = 0.8 * Math.PI + ((speed * 1.2) / maxSpeed) * 1.4 * Math.PI + (keys.w ? 0.2 : 0);
+            ctx.beginPath();
+            ctx.moveTo(310, 410);
+            ctx.lineTo(310 + Math.cos(rpmAngle)*35, 410 + Math.sin(rpmAngle)*35);
+            ctx.stroke();
+
+            // ЦЕНТРАЛЬНАЯ КОНСОЛЬ («Борода» семерки)
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(470, 350, 130, 110);
+            
+            // 1. МАГНИТОЛА
+            ctx.fillStyle = '#000';
+            ctx.fillRect(480, 365, 110, 30);
+            ctx.fillStyle = dashLightsColor; // Цвет текста магнитолы
+            ctx.font = '11px monospace';
+            ctx.fillText(radioOn ? "📻 НАШ ЭФИР: 100%" : "RADIO OFF", 488, 384);
+
+            // 2. ПЕЧКА (Рычажки/Огоньки)
+            ctx.fillStyle = '#333';
+            ctx.fillRect(480, 415, 80, 30);
+            // Отрисовка ползунков в зависимости от уровня heaterLevel
+            ctx.fillStyle = '#ff3b30'; // Красный флажок печки
+            let heaterPos = 485 + (heaterLevel * 25);
+            ctx.fillRect(heaterPos, 420, 8, 20);
+            ctx.fillStyle = '#fff';
+            ctx.font = '9px sans-serif';
+            ctx.fillText("ПЕЧКА: " + (heaterLevel === 0 ? "ВЫКЛ" : heaterLevel === 1 ? "ТЕПЛО" : "ЖАРА"), 485, 410);
+
+            // РУЛЬ ВАЗ-2107 (Крутится от steeringAngle)
+            ctx.save();
+            ctx.translate(250, 440); // Центр руля
+            ctx.rotate(steeringAngle);
+            
+            // Обод руля
+            ctx.strokeStyle = '#151515'; ctx.lineWidth = 14;
+            ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2); ctx.stroke();
+            // Спицы руля «семерочные»
+            ctx.fillStyle = '#1c1c1c';
+            ctx.fillRect(-65, -10, 130, 20); // Горизонтальная перекладина
+            ctx.fillRect(-15, 0, 30, 65); // Нижняя спица
+            // Прямоугольная подушка центра
+            ctx.fillStyle = '#222';
+            ctx.fillRect(-25, -20, 50, 40);
+            // Хромированный значок Лада в центре
+            ctx.strokeStyle = '#8e8e93'; ctx.lineWidth = 2;
+            ctx.strokeRect(-10, -8, 20, 16);
+            
+            ctx.restore();
+
+            // ВЕРХНИЙ БОРТОВОЙ ИНТЕРФЕЙС ТВОЕГО САЙТА (HUD)
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 0, 800, 40);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(`📊 Очки: ${score}`, 20, 25);
+            ctx.fillText(`⏱ Скорость: ${Math.floor(speed)} км/ч`, 250, 25);
+            ctx.fillText(`⛽ Топливо: ${Math.floor(fuel)}%`, 500, 25);
+            ctx.fillText(`📟 Пробег: ${odometer.toFixed(1)} км`, 660, 25);
+        }
+
+        // Запуск
+        gameLoop();
     </script>
 </body>
 </html>
