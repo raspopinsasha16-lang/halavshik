@@ -140,8 +140,7 @@
 
             if (hlsInstance) { hlsInstance.destroy(); }
 
-            // ВОТ ОНО: Запускаем видео напрямую, БЕЗ corsproxy.io, чтобы мобилки не висли
-           var fastVideoUrl = 'https://corsproxy.io/?' + encodeURIComponent(streamUrl);
+            var fastVideoUrl = 'https://corsproxy.io/?' + encodeURIComponent(streamUrl);
 
             if (Hls.isSupported()) {
                 hlsInstance = new Hls();
