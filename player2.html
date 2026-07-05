@@ -6,7 +6,6 @@
     <title>Халявщик | Кинотеатр & IPTV</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body {
@@ -23,11 +22,9 @@
         .container { max-width: 600px; margin: 0 auto; }
         
         .player-box { background: rgba(25, 25, 25, 0.95); border: 2px solid #e50914; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .player-box input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: 1px solid #e50914; background: #000; color: #fff; box-sizing: border-box; text-align: center; font-size: 15px; }
         
         .player-buttons { display: flex; gap: 10px; margin-bottom: 5px; }
-        .main-play-btn { background: #e50914; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 15px; }
-        .tv-quick-btn { background: #248a3d; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 15px; white-space: nowrap; }
+        .tv-quick-btn { background: #248a3d; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; white-space: nowrap; }
         
         #video-container { margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
         #status { font-size: 14px; color: #00bcd4; margin: 12px 0; font-weight: bold; }
@@ -52,12 +49,10 @@
         <h1>🎬 Кинотеатр & IPTV</h1>
 
         <div class="player-box">
-            <input type="text" id="torrentUrl" placeholder="Вставь ссылку, Magnet 🧲 или .m3u8">
             <div class="player-buttons">
-                <button class="main-play-btn" onclick="playAction(null)">Включить плеер</button>
                 <button class="tv-quick-btn" onclick="loadIPTVPlaylist('http://sachamaster.pp.ua/2020/2020399.m3u8')">📺 Моё ТВ</button>
             </div>
-            <div id="status">Вставьте медиаресурс или запустите телевидение</div>
+            <div id="status">Запустите телевидение</div>
             <div id="video-container"></div>
             <div class="tv-channels-grid" id="channelsGrid"></div>
         </div>
@@ -72,7 +67,6 @@
             audio.play().catch(function(e){}); 
         }
 
-        var client = new WebTorrent();
         var player;
         var hlsInstance = null;
         var plyrConfig = { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'pip', 'fullscreen'] };
@@ -137,17 +131,16 @@
             var container = document.getElementById('video-container');
             var status = document.getElementById('status');
             
-            // Проверяем, мобильный ли это телефон
+            // Проверка на мобильное устройство
             var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             if (isMobile) {
                 status.innerHTML = '📲 Открываем ' + channelName + ' в плеере...';
-                // Отправляем прямую ссылку внешней программе телефона
                 window.location.href = streamUrl;
                 return; 
             }
 
-            // Код для компьютера остается абсолютно нетронутым и рабочим:
+            // Логика для ПК
             status.innerHTML = '🚀 Запуск: ' + channelName + '...';
             container.innerHTML = '<video id="player" playsinline controls></video>';
             var videoElement = document.getElementById('player');
@@ -177,33 +170,6 @@
                 status.innerHTML = '📺 Эфир: ' + channelName;
             }
         }
-
-        function playAction(forcedLink) {
-            playSound();
-            var link = forcedLink ? forcedLink : document.getElementById('torrentUrl').value.trim();
-            if(!link) { alert('Вставь ссылку!'); return; }
-            
-            if (link.includes('.m3u8') || link.includes('m3u8')) {
-                loadIPTVPlaylist(link);
-            } else {
-                document.getElementById('channelsGrid').innerHTML = '';
-                if (link.startsWith('magnet')) {
-                    var status = document.getElementById('status');
-                    status.innerHTML = '⚡ Ищем раздачу в торрентах...';
-                    document.getElementById('video-container').innerHTML = '<video id="player" playsinline controls></video>';
-                    var videoElement = document.getElementById('player');
-                    client.add(link, function (torrent) {
-                        var file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.mkv'));
-                        file.renderTo('#player', { autoplay: true });
-                        player = new Plyr(videoElement, plyrConfig);
-                        status.innerHTML = 'Играет торрент: ' + file.name;
-                    });
-                } else {
-                    startStream(link, "Видеофайл");
-                }
-            }
-        }
     </script>
 </body>
 </html>
-
