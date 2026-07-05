@@ -17,7 +17,6 @@
         h1 { color: #e50914; margin: 5px 0; font-size: 22px; }
         .game-container { max-width: 800px; margin: 0 auto; position: relative; }
         
-        /* Экран игры */
         canvas {
             width: 100%;
             max-width: 800px;
@@ -28,7 +27,6 @@
             display: block;
         }
 
-        /* Инструкция по кнопкам */
         .controls-info {
             background: #1f1f1f;
             padding: 10px;
@@ -43,7 +41,6 @@
         }
         .key { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #555; font-weight: bold;}
 
-        /* Мобильный блок управления */
         .mobile-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -95,7 +92,7 @@
             <div><span class="key">A</span> / <span class="key">◀</span> Левее</div>
             <div><span class="key">D</span> / <span class="key">▶</span> Правее</div>
             <div><span class="key">Q</span> / <span class="key">E</span> Камера Л/П</div>
-            <div><span class="key">Клик мыши</span> — Торпеда (Руль — Запуск, Печка/Магнитола)</div>
+            <div><span class="key">Клик мыши</span> — Торпеда (Руль — Запуск, Радио)</div>
         </div>
 
        <a href="index.html" class="back-btn" onclick="document.getElementById('clickSound').play()">← В главное меню</a>
@@ -124,8 +121,7 @@
 
         // Интерактивные элементы торпеды
         let radioOn = false;
-        let heaterLevel = 0; 
-        let dashLightsColor = 'rgba(0, 255, 100, 0.3)'; 
+        let dashLightsColor = 'rgba(0, 255, 100, 0.25)'; 
 
         // Клавиши управления
         let keys = { w: false, a: false, s: false, d: false, q: false, e: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -140,7 +136,6 @@
             { x: 0.4, y: 100, speed: 60, type: 'car' }
         ];
 
-        // Слушатели клавиатуры
         window.addEventListener('keydown', e => { 
             let k = e.key.toLowerCase();
             if (k in keys) keys[k] = true;
@@ -152,14 +147,13 @@
             if (e.key in keys) keys[e.key] = false;
         });
 
-        // Клик по торпеде
         canvas.addEventListener('click', e => {
             const rect = canvas.getBoundingClientRect();
             const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
             const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-            // Зона руля / замка зажигания
-            if (clickX >= 150 && clickX <= 350 && clickY >= 360 && clickY <= 500) {
+            // Клик по РУЛЮ для запуска
+            if (clickX >= 350 && clickX <= 560 && clickY >= 340 && clickY <= 500) {
                 if (!engineStarted) {
                     engineStarted = true;
                     document.getElementById('engineStartSound').play();
@@ -168,26 +162,20 @@
                         if (engineStarted) {
                             const driveSound = document.getElementById('engineDriveSound');
                             driveSound.volume = 0.3;
-                            driveSound.playbackRate = 0.8; // ИСПРАВЛЕНО: теперь меняем скорость звука, а не картинки
+                            driveSound.playbackRate = 0.8; 
                             driveSound.play().catch(err => console.log(err));
                         }
                     }, 1500);
                 }
             }
 
-            // Зона магнитолы
-            if (clickX >= 480 && clickX <= 580 && clickY >= 360 && clickY <= 400) {
+            // Клик по МАГНИТОЛЕ
+            if (clickX >= 560 && clickX <= 630 && clickY >= 380 && clickY <= 415) {
                 document.getElementById('clickSound').play();
                 if (engineStarted) radioOn = !radioOn;
             }
-            // Зона печки
-            if (clickX >= 480 && clickX <= 560 && clickY >= 415 && clickY <= 445) {
-                document.getElementById('clickSound').play();
-                if (engineStarted) heaterLevel = (heaterLevel + 1) % 3;
-            }
         });
 
-        // Мобильное управление
         setupMobileBtn('btnGas', ['w', 'ArrowUp']);
         setupMobileBtn('btnBrake', ['s', 'ArrowDown']);
         setupMobileBtn('btnLeft', ['a', 'ArrowLeft']);
@@ -286,96 +274,122 @@
             ctx.save();
             ctx.translate(cameraPan * 2, 0);
 
-            // 1. ОКРУЖЕНИЕ (Под лобовым стеклом)
-            ctx.fillStyle = '#0b0f19'; 
-            ctx.fillRect(-200, 0, canvas.width + 400, 250);
+            // 1. ЗАДНИЙ ПЛАН (Ночное небо)
+            ctx.fillStyle = '#05070f'; 
+            ctx.fillRect(-200, 0, canvas.width + 400, 265);
 
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(600, 60, 20, 0, Math.PI*2); ctx.fill();
+            // Луна
+            ctx.fillStyle = '#fffdf0';
+            ctx.beginPath(); ctx.arc(630, 50, 16, 0, Math.PI*2); ctx.fill();
 
-            ctx.fillStyle = '#141911'; 
-            ctx.fillRect(-200, 250, canvas.width + 400, 250);
-
-            ctx.fillStyle = '#222';
+            // Дорога (Теперь плавно доходит до нижней кромки лобового стекла на 265px)
+            ctx.fillStyle = '#161a1e';
             ctx.beginPath();
-            ctx.moveTo(350, 250); ctx.lineTo(450, 250);
-            ctx.lineTo(800 - (playerX * 300), 500); ctx.lineTo(0 - (playerX * 300), 500);
+            ctx.moveTo(360, 200); ctx.lineTo(440, 200);
+            ctx.lineTo(850 - (playerX * 340), 265); ctx.lineTo(-50 - (playerX * 340), 265);
             ctx.fill();
 
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 4;
+            // Разметка на дороге
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 3;
             roadLines.forEach(lineY => {
-                let y = 250 + (lineY * 0.5);
-                let screenX = 400 - (playerX * (lineY * 0.6));
-                ctx.beginPath();
-                ctx.moveTo(screenX, y);
-                ctx.lineTo(screenX - (playerX * 0.2), y + 15);
-                ctx.stroke();
+                // Масштабируем линии, чтобы они двигались только в зоне видимости окна до торпеды
+                let y = 200 + (lineY * 0.13); 
+                if (y <= 265) {
+                    let screenX = 400 - (playerX * (lineY * 0.7));
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, y);
+                    ctx.lineTo(screenX - (playerX * 0.2), y + 8);
+                    ctx.stroke();
+                }
             });
 
+            // Трафик на дороге
             traffic.forEach(car => {
-                let carScale = car.y / 400;
-                if (carScale < 0.1) carScale = 0.1;
-                let carX = 400 + (car.x - playerX) * car.y;
-                
-                ctx.fillStyle = car.type === 'truck' ? '#248a3d' : '#33b5e5';
-                ctx.fillRect(carX - (20 * carScale), car.y, 40 * carScale, 30 * carScale);
-                ctx.fillStyle = 'red';
-                ctx.fillRect(carX - (18 * carScale), car.y + (20 * carScale), 8 * carScale, 5 * carScale);
-                ctx.fillRect(carX + (10 * carScale), car.y + (20 * carScale), 8 * carScale, 5 * carScale);
+                let carY = 200 + (car.y * 0.13);
+                if (carY <= 265) {
+                    let carScale = carY / 265;
+                    let carX = 400 + (car.x - playerX) * car.y * 0.5;
+                    ctx.fillStyle = car.type === 'truck' ? '#1c4d29' : '#1f5975';
+                    ctx.fillRect(carX - (15 * carScale), carY - (10 * carScale), 30 * carScale, 15 * carScale);
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(carX - (13 * carScale), carY - (2 * carScale), 5 * carScale, 2 * carScale);
+                    ctx.fillRect(carX + (8 * carScale), carY - (2 * carScale), 5 * carScale, 2 * carScale);
+                }
             });
 
             ctx.restore(); 
 
-            // 2. ОТРИСОВКА САЛОНА
+            // 2. ОТРИСОВКА САЛОНА И ВИДА ИЗ ОКНА С КАРТИНКИ
             if (dashLoaded) {
                 ctx.drawImage(dashImage, 0, 260, 800, 240);
+                
+                // РЕАЛИЗМ: Накладываем темно-синий ночной градиент на верхнюю часть картинки (на капот и обочину),
+                // чтобы убрать дневной свет со снимка и превратить его в глубокую ночь.
+                let nightFilter = ctx.createLinearGradient(0, 260, 0, 330);
+                nightFilter.addColorStop(0, 'rgba(5, 7, 15, 0.85)');
+                nightFilter.addColorStop(0.6, 'rgba(10, 15, 25, 0.5)');
+                nightFilter.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = nightFilter;
+                ctx.fillRect(0, 260, 800, 70);
             } else {
-                ctx.fillStyle = '#1e1e1e';
-                ctx.fillRect(0, 0, 40, 500); ctx.fillRect(760, 0, 40, 500); 
-                ctx.fillStyle = '#0d2342'; 
-                ctx.beginPath(); ctx.moveTo(40, 310); ctx.lineTo(760, 310); ctx.lineTo(800, 350); ctx.lineTo(0, 350); ctx.fill();
-                ctx.fillStyle = '#282828'; ctx.fillRect(0, 340, 800, 160);
-                ctx.fillStyle = '#1c1c1c'; ctx.fillRect(0, 460, 800, 40);
+                ctx.fillStyle = '#222'; ctx.fillRect(0, 260, 800, 240);
             }
 
-            // 3. СТРЕЛКИ ПРИБОРОВ (Векторные, поверх картинки)
+            // 3. ПОДСВЕТКА И СТРЕЛКИ (На приборную панель)
             if (engineStarted) {
-                ctx.fillStyle = dashLightsColor;
-                ctx.beginPath(); ctx.arc(200, 410, 40, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(310, 410, 40, 0, Math.PI*2); ctx.fill();
+                let tachoGrad = ctx.createRadialGradient(422, 386, 1, 422, 386, 20);
+                tachoGrad.addColorStop(0, 'rgba(0, 255, 70, 0.35)');
+                tachoGrad.addColorStop(1, 'rgba(0, 255, 70, 0)');
+                ctx.fillStyle = tachoGrad;
+                ctx.beginPath(); ctx.arc(422, 386, 20, 0, Math.PI*2); ctx.fill();
+
+                let speedGrad = ctx.createRadialGradient(495, 386, 1, 495, 386, 20);
+                speedGrad.addColorStop(0, 'rgba(0, 255, 70, 0.35)');
+                speedGrad.addColorStop(1, 'rgba(0, 255, 70, 0)');
+                ctx.fillStyle = speedGrad;
+                ctx.beginPath(); ctx.arc(495, 386, 20, 0, Math.PI*2); ctx.fill();
             }
 
-            // Стрелка спидометра
-            let speedAngle = 0.8 * Math.PI + (speed / maxSpeed) * 1.4 * Math.PI;
-            ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(200, 410);
-            ctx.lineTo(200 + Math.cos(speedAngle)*35, 410 + Math.sin(speedAngle)*35);
-            ctx.stroke();
-
-            // Стрелка тахометра
+            // Тахометр
             let rpmAngle = 0.8 * Math.PI + ((speed * 1.2) / maxSpeed) * 1.4 * Math.PI + ((keys.w || keys.ArrowUp) && engineStarted ? 0.2 : 0);
-            ctx.beginPath(); ctx.moveTo(310, 410);
-            ctx.lineTo(310 + Math.cos(rpmAngle)*35, 410 + Math.sin(rpmAngle)*35);
+            ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(422, 386);
+            ctx.lineTo(422 + Math.cos(rpmAngle)*16, 386 + Math.sin(rpmAngle)*16);
             ctx.stroke();
 
-            // Магнитола
-            ctx.fillStyle = '#000'; ctx.fillRect(480, 365, 110, 30);
-            ctx.fillStyle = engineStarted && radioOn ? '#00ff00' : '#333';
-            ctx.font = '11px monospace';
-            ctx.fillText(engineStarted && radioOn ? "📻 НАШ ЭФИР" : "RADIO OFF", 488, 384);
+            // Спидометр
+            let speedAngle = 0.8 * Math.PI + (speed / maxSpeed) * 1.4 * Math.PI;
+            ctx.beginPath(); ctx.moveTo(495, 386);
+            ctx.lineTo(495 + Math.cos(speedAngle)*16, 386 + Math.sin(speedAngle)*16);
+            ctx.stroke();
 
-            // РУЛЬ
+            // Дисплей магнитолы
+            ctx.fillStyle = '#06070a'; ctx.fillRect(565, 392, 75, 18);
+            ctx.fillStyle = engineStarted && radioOn ? '#33ff33' : '#222';
+            ctx.font = '9px monospace';
+            ctx.fillText(engineStarted && radioOn ? "📻 ЭФИР-7" : "RADIO OFF", 572, 404);
+
+            // РУЛЬ СЕМЕРКИ
             ctx.save();
-            ctx.translate(250, 440); 
+            ctx.translate(458, 442); 
             ctx.rotate(steeringAngle);
-            ctx.strokeStyle = '#151515'; ctx.lineWidth = 14;
-            ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2); ctx.stroke();
-            ctx.fillStyle = '#1c1c1c'; ctx.fillRect(-65, -10, 130, 20); ctx.fillRect(-15, 0, 30, 65);
+            ctx.strokeStyle = '#121214'; ctx.lineWidth = 11;
+            ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = '#19191b'; 
+            ctx.fillRect(-58, -8, 116, 16); 
+            ctx.fillRect(-12, 0, 24, 55);
             ctx.restore();
 
+            // ОБЩЕЕ ЗАТЕМНЕНИЕ САЛОНА (Создает уютный полумрак внизу)
+            let cabinShadow = ctx.createLinearGradient(0, 330, 0, 500);
+            cabinShadow.addColorStop(0, 'rgba(0, 0, 0, 0.15)');
+            cabinShadow.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
+            ctx.fillStyle = cabinShadow;
+            ctx.fillRect(0, 330, 800, 170);
+
             // HUD
-            ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, 0, 800, 40);
+            ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0, 0, 800, 40);
             ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
             ctx.fillText(`📊 Очки: ${score}`, 20, 25);
             ctx.fillText(`⏱ Скорость: ${Math.floor(speed)} км/ч`, 250, 25);
