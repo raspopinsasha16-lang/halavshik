@@ -140,7 +140,7 @@
 
             if (hlsInstance) { hlsInstance.destroy(); }
 
-            // Используем другой прокси-сервер (всеядный)
+            // Используем всеядный прокси
             var fastVideoUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(streamUrl);
 
             if (Hls.isSupported()) {
@@ -148,12 +148,12 @@
                 hlsInstance.loadSource(fastVideoUrl);
                 hlsInstance.attachMedia(videoElement);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-                    videoElement.play().catch(function(){});
-                    status.innerHTML = '📺 Эфир: ' + channelName;
+                    status.innerHTML = '📺 Эфир: ' + channelName + ' (Нажми Play)';
                 });
-            } else {
-                videoElement.src = streamUrl;
-                videoElement.play();
+            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                videoElement.src = fastVideoUrl;
+                player = new Plyr(videoElement, plyrConfig);
+                status.innerHTML = '📺 Эфир: ' + channelName;
             }
         }
     </script>
