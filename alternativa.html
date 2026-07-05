@@ -6,6 +6,7 @@
     <title>ВАЗ-2107 Симулятор | Халявщик</title>
     <style>
         body {
+            <audio id="clickSound" src="click.mp3" preload="auto"></audio>
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             background: #141414;
             color: #fff;
@@ -94,7 +95,7 @@
             <div><span class="key">Клик мыши</span> — Интерактивная торпеда (Печка/Магнитола)</div>
         </div>
 
-        <a href="index.html" class="back-btn">← В главное меню</a>
+       <a href="index.html" class="back-btn" onclick="document.getElementById('clickSound').play()">← В главное меню</a>
     </div>
 
     <script>
@@ -141,20 +142,21 @@
             if (e.key in keys) keys[e.key] = false;
         });
 
-        // Клик по холсту (интерактивная торпеда)
+       // Клик по холсту (интерактивная торпеда)
         canvas.addEventListener('click', e => {
             const rect = canvas.getBoundingClientRect();
-            // Вычисляем реальные координаты клика на холсте 800x500
             const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
             const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-            // Клик по магнитоле (зона по центру справа)
+            // Клик по магнитоле
             if (clickX >= 480 && clickX <= 580 && clickY >= 360 && clickY <= 400) {
+                document.getElementById('clickSound').play(); // Воспроизводим щелчок
                 radioOn = !radioOn;
-                dashLightsColor = radioOn ? '#00ff00' : '#333'; // Включаем подсветку приборов
+                dashLightsColor = radioOn ? '#00ff00' : '#333';
             }
-            // Клик по ползункам печки (чуть ниже магнитолы)
+            // Клик по ползункам печки
             if (clickX >= 480 && clickX <= 560 && clickY >= 415 && clickY <= 445) {
+                document.getElementById('clickSound').play(); // Воспроизводим щелчок
                 heaterLevel = (heaterLevel + 1) % 3;
             }
         });
